@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evidence-Belief Engine</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        grid: '#1e293b',
+                        panel: '#0f172a',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #020617; color: #f8fafc; overflow-x: hidden; }
+        
+        /* Smooth transitions for data nodes moving on the grid */
+        .node {
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        .node:hover circle {
+            stroke: white;
+            stroke-width: 3px;
+        }
+        
+        /* Grid styling */
+        .axis-line { stroke: #334155; stroke-width: 1; }
+        .humean-line { stroke: #22c55e; stroke-width: 2; stroke-dasharray: 4; opacity: 0.7; }
+        .unfalsifiable-line { stroke: #64748b; stroke-width: 2; stroke-dasharray: 4; opacity: 0.5; }
+        .grid-text { font-family: 'JetBrains Mono', monospace; font-size: 6px; fill: #94a3b8; }
+        
+        /* Heat signatures */
+        .heat-0 { fill: #3b82f6; filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.6)); } /* Blue/Zero Entropy */
+        .heat-1 { fill: #eab308; filter: drop-shadow(0 0 6px rgba(234, 179, 8, 0.8)); } /* Yellow/Warning */
+        .heat-2 { fill: #ef4444; filter: drop-shadow(0 0 10px rgba(239, 68, 68, 1)); } /* Red/Max Dissonance */
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <!-- Left Side: Cartesian Canvas -->
+    <main class="w-full md:w-2/3 h-1/2 md:h-full relative flex items-center justify-center border-r border-slate-800 p-4 md:p-8">
+        
+        <!-- Header Overlay -->
+        <div class="absolute top-6 left-6 z-10">
+            <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white mb-1">
+                EB Engine <span class="text-blue-500">v1.0</span>
+            </h1>
+            <p class="text-slate-400 font-mono text-sm">Thermodynamic Epistemology Simulator</p>
+        </div>
+
+        <!-- System Stats Overlay -->
+        <div class="absolute bottom-6 left-6 z-10 bg-slate-900/80 p-4 rounded-lg border border-slate-700 backdrop-blur-sm">
+            <div class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">System Metrics</div>
+            <div class="flex flex-col gap-1 font-mono text-sm">
+                <div class="flex justify-between gap-4">
+                    <span class="text-slate-400">Total Residual (Σ|e|):</span>
+                    <span id="global-residual" class="font-bold text-white">0.00</span>
+                </div>
+                <div class="flex justify-between gap-4">
+                    <span class="text-slate-400">Entities Plotted:</span>
+                    <span id="total-entities" class="font-bold text-white">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SVG Grid Container -->
+        <div class="w-full max-w-2xl aspect-square bg-grid rounded-xl border border-slate-700 shadow-2xl relative overflow-hidden">
+            <!-- viewBox scales from -120 to 120. (0,0) is center. Y is inverted in SVG vs Cartesian -->
+            <svg id="cartesian-plane" viewBox="-120 -120 240 240" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                
+                <!-- Grid Lines (Background) -->
+                <line x1="-100" y1="-50" x2="100" y2="-50" class="axis-line opacity-20" />
+                <line x1="-100" y1="50" x2="100" y2="50" class="axis-line opacity-20" />
+                <line x1="-50" y1="-100" x2="-50" y2="100" class="axis-line opacity-20" />
+                <line x1="50" y1="-100" x2="50" y2="100" class="axis-line opacity-20" />
+
+                <!-- The Line of Unfalsifiability (X = 0) -->
+                <line x1="0" y1="-110" x2="0" y2="110" class="unfalsifiable-line" />
+                <text x="3" y="-105" class="grid-text" opacity="0.7">x=0 (Unfalsifiable)</text>
+
+                <!-- The Humean Line (Y = X) -->
+                <!-- SVG Y is down, so (x=-100, y=-100 cartesian) is (-100, 100 svg) -->
+                <line x1="-100" y1="100" x2="100" y2="-100" class="humean-line" />
+                <text x="60" y="-70" class="grid-text fill-green-500" opacity="0.8">y=x (Zero Entropy)</text>
+
+                <!-- Main X and Y Axes -->
+                <line x1="-110" y1="0" x2="110" y2="0" class="axis-line" stroke-width="1.5" />
+                <!-- Y-axis overlaps x=0, already drawn, but let's reinforce it -->
+                <line x1="0" y1="-110" x2="0" y2="110" class="axis-line" stroke-width="1.5" />
+
+                <!-- Axis Labels -->
+                <text x="100" y="-4" class="grid-text" text-anchor="end">X: Evidence (1)</text>
+                <text x="-100" y="-4" class="grid-text">X: Falsified (-1)</text>
+                <text x="4" y="-100" class="grid-text">Y: Belief (1)</text>
+                <text x="4" y="100" class="grid-text">Y: Disbelief (-1)</text>
+
+                <!-- Dynamic Data Nodes will be injected here via JS -->
+                <g id="data-nodes"></g>
+            </svg>
+        </div>
+    </main>
+
+    <!-- Right Side: Control Panel -->
+    <aside class="w-full md:w-1/3 h-1/2 md:h-full bg-panel flex flex-col shadow-[-10px_0_30px_rgba(0,0,0,0.5)] z-20">
+        
+        <!-- Tab Navigation -->
+        <div class="flex border-b border-slate-800">
+            <button class="flex-1 py-4 text-sm font-semibold text-white border-b-2 border-blue-500 bg-slate-800/50">Active Claims</button>
+            <button onclick="resetSystem()" class="flex-1 py-4 text-sm font-semibold text-slate-400 hover:text-white transition-colors"><i class="fa-solid fa-rotate-right mr-2"></i>Reset Engine</button>
+        </div>
+
+        <div class="p-6 flex-1 overflow-y-auto" id="control-panel-content">
+            
+            <p class="text-slate-400 text-sm mb-6">Select a claim to analyze its coordinates and apply logical filters to minimize thermodynamic residuals.</p>
+
+            <!-- Claim List -->
+            <div id="claim-list" class="flex flex-col gap-3 mb-8">
+                <!-- Injected via JS -->
+            </div>
+
+            <!-- Active Claim Details & Filters (Hidden initially) -->
+            <div id="active-claim-panel" class="hidden bg-slate-900 border border-slate-700 rounded-xl p-5 shadow-lg">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 id="active-name" class="text-lg font-bold text-white leading-tight">Claim Name</h3>
+                    <span id="active-residual-badge" class="px-2 py-1 rounded text-xs font-mono font-bold bg-slate-800 border">|e| = 0</span>
+                </div>
+                <p id="active-desc" class="text-xs text-slate-400 mb-4 line-clamp-3">Description...</p>
+
+                <div class="grid grid-cols-2 gap-4 mb-6 font-mono text-sm bg-slate-950 p-3 rounded-lg border border-slate-800">
+                    <div>
+                        <span class="text-slate-500 block text-xs uppercase mb-1">Evidence (X)</span>
+                        <span id="active-x" class="text-white font-bold">0</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block text-xs uppercase mb-1">Belief (Y)</span>
+                        <span id="active-y" class="text-white font-bold">0</span>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">Algorithmic Filters</h4>
+                    
+                    <button id="btn-hitchens" onclick="applyHitchens()" class="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition-colors group">
+                        <div class="flex items-center text-sm font-semibold text-white">
+                            <i class="fa-solid fa-gavel w-6 text-slate-400 group-hover:text-blue-400 transition-colors"></i> Hitchens's Razor
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
+                    </button>
+
+                    <button id="btn-sagan" onclick="applySagan()" class="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition-colors group">
+                        <div class="flex items-center text-sm font-semibold text-white">
+                            <i class="fa-solid fa-scale-balanced w-6 text-slate-400 group-hover:text-purple-400 transition-colors"></i> Sagan's Standard
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
+                    </button>
+
+                    <button id="btn-landauer" onclick="applyLandauer()" class="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition-colors group">
+                        <div class="flex items-center text-sm font-semibold text-white">
+                            <i class="fa-solid fa-fire w-6 text-slate-400 group-hover:text-red-400 transition-colors"></i> Landauer's Limit
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </aside>
+
+    <script>
+        // Database of Claims
+        const initialClaims = [
+            {
+                id: 'g0',
+                name: 'The Intervening God (G0)',
+                description: 'A tri-omni deity that answers prayers, parts seas, and physically alters the universe. Requires a massive amount of physical computation.',
+                x: 0, // Unfalsifiable until tested
+                y: 1, // Asserter's absolute belief
+                is_intervening: true
+            },
+            {
+                id: 'pythagoras',
+                name: 'Pythagorean Fava Beans',
+                description: 'The belief that hollow fava bean stems act as literal ladders for reincarnated human souls.',
+                x: -1, // Falsified biology
+                y: 1, // Pythagoras died for this
+                is_intervening: false
+            },
+            {
+                id: 'geocentrism',
+                name: 'Ptolemaic Geocentrism',
+                description: 'The Earth is fixed at the center. Requires invisible epicycles to explain retrograde motion.',
+                x: -1, // Falsified by Galileo/Newton
+                y: 1, // Church dogma
+                is_intervening: false
+            },
+            {
+                id: 'mwi',
+                name: 'Many-Worlds Interpretation',
+                description: 'Wave function branches into entire physical universes. Falsified by the lack of Stenger Spikes (thermodynamic heat) at bifurcations.',
+                x: -1, // No heat signature
+                y: 1, // Popular amongst theoretical physicists
+                is_intervening: false
+            },
+            {
+                id: 'relativity',
+                name: 'General Relativity',
+                description: 'Gravity is the curvature of spacetime. Verified by Eddington eclipse experiment and GPS synchronization.',
+                x: 1, // Empirically proven
+                y: 1, // Scientific consensus
+                is_intervening: false
+            }
+        ];
+
+        let claims = [];
+        let activeClaimId = null;
+
+        // Initialization
+        function init() {
+            resetSystem();
+        }
+
+        function resetSystem() {
+            // Deep copy to break references
+            claims = JSON.parse(JSON.stringify(initialClaims));
+            activeClaimId = null;
+            document.getElementById('active-claim-panel').classList.add('hidden');
+            renderAll();
+        }
+
+        // Calculate the thermodynamic residual |y - x|
+        function calculateResidual(x, y) {
+            return Math.abs(y - x);
+        }
+
+        // Determine heat class based on residual
+        function getHeatClass(residual) {
+            if (residual <= 0.2) return 'heat-0'; // Humean line
+            if (residual <= 1.2) return 'heat-1'; // Cognitive dissonance
+            return 'heat-2'; // Maximum dissonance/falsified
+        }
+
+        // Map Cartesian (-1 to 1) to SVG ViewBox (-100 to 100)
+        function mapToSVG(x, y) {
+            return {
+                cx: x * 100,
+                cy: -y * 100 // Invert Y for SVG coordinates
+            };
+        }
+
+        function renderAll() {
+            renderSVG();
+            renderSidebar();
+            updateMetrics();
+            
+            if (activeClaimId) {
+                updateActivePanel();
+            }
+        }
+
+        function renderSVG() {
+            const container = document.getElementById('data-nodes');
+            container.innerHTML = ''; // Clear existing nodes
+
+            claims.forEach(claim => {
+                const residual = calculateResidual(claim.x, claim.y);
+                const heatClass = getHeatClass(residual);
+                const svgCoords = mapToSVG(claim.x, claim.y);
+                const isActive = claim.id === activeClaimId;
+
+                // Create Group
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('class', 'node');
+                g.onclick = () => selectClaim(claim.id);
+
+                // Create Circle
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', svgCoords.cx);
+                circle.setAttribute('cy', svgCoords.cy);
+                circle.setAttribute('r', isActive ? '6' : '4');
+                circle.setAttribute('class', `${heatClass} transition-all duration-700 ease-in-out`);
+                
+                if (isActive) {
+                    circle.setAttribute('stroke', 'white');
+                    circle.setAttribute('stroke-width', '2');
+                }
+
+                // Create Label
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', svgCoords.cx + 8);
+                text.setAttribute('y', svgCoords.cy + 3);
+                text.setAttribute('class', `font-mono text-[5px] transition-all duration-700 ease-in-out ${isActive ? 'fill-white font-bold' : 'fill-slate-400'}`);
+                text.textContent = claim.name.substring(0, 15) + (claim.name.length > 15 ? '...' : '');
+
+                g.appendChild(circle);
+                g.appendChild(text);
+                container.appendChild(g);
+            });
+        }
+
+        function renderSidebar() {
+            const list = document.getElementById('claim-list');
+            list.innerHTML = '';
+
+            claims.forEach(claim => {
+                const residual = calculateResidual(claim.x, claim.y);
+                const heatClass = getHeatClass(residual);
+                const isActive = claim.id === activeClaimId;
+                
+                // Color map for UI dots
+                const dotColor = residual <= 0.2 ? 'bg-blue-500' : (residual <= 1.2 ? 'bg-yellow-500' : 'bg-red-500');
+                const borderClass = isActive ? 'border-blue-500 bg-slate-800' : 'border-slate-700 bg-slate-900 hover:border-slate-500';
+
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-lg border cursor-pointer transition-colors flex items-center justify-between ${borderClass}`;
+                div.onclick = () => selectClaim(claim.id);
+
+                div.innerHTML = `
+                    <div class="flex items-center gap-3 truncate">
+                        <div class="w-2 h-2 rounded-full ${dotColor}"></div>
+                        <span class="text-sm font-semibold text-white truncate">${claim.name}</span>
+                    </div>
+                    <span class="text-xs font-mono text-slate-400 shrink-0">|e| = ${residual.toFixed(1)}</span>
+                `;
+                
+                list.appendChild(div);
+            });
+        }
+
+        function updateMetrics() {
+            const totalE = claims.reduce((sum, claim) => sum + calculateResidual(claim.x, claim.y), 0);
+            document.getElementById('global-residual').textContent = totalE.toFixed(2);
+            document.getElementById('total-entities').textContent = claims.length;
+
+            // Update color based on system entropy
+            const globalResEl = document.getElementById('global-residual');
+            if (totalE > 4) globalResEl.className = 'font-bold text-red-500';
+            else if (totalE > 1) globalResEl.className = 'font-bold text-yellow-500';
+            else globalResEl.className = 'font-bold text-green-500';
+        }
+
+        function selectClaim(id) {
+            activeClaimId = id;
+            document.getElementById('active-claim-panel').classList.remove('hidden');
+            renderAll(); // Re-render to highlight selected
+        }
+
+        function updateActivePanel() {
+            const claim = claims.find(c => c.id === activeClaimId);
+            if (!claim) return;
+
+            document.getElementById('active-name').textContent = claim.name;
+            document.getElementById('active-desc').textContent = claim.description;
+            document.getElementById('active-x').textContent = claim.x.toFixed(1);
+            document.getElementById('active-y').textContent = claim.y.toFixed(1);
+
+            const residual = calculateResidual(claim.x, claim.y);
+            const badge = document.getElementById('active-residual-badge');
+            badge.textContent = `|e| = ${residual.toFixed(1)}`;
+            
+            badge.className = `px-2 py-1 rounded text-xs font-mono font-bold border ${
+                residual <= 0.2 ? 'bg-blue-900/50 border-blue-500 text-blue-400' :
+                residual <= 1.2 ? 'bg-yellow-900/50 border-yellow-500 text-yellow-400' :
+                'bg-red-900/50 border-red-500 text-red-400'
+            }`;
+
+            // Configure Button states based on mathematical applicability
+            const btnHitchens = document.getElementById('btn-hitchens');
+            const btnSagan = document.getElementById('btn-sagan');
+            const btnLandauer = document.getElementById('btn-landauer');
+
+            // Hitchens: Only applies if X == 0
+            if (claim.x === 0 && claim.y !== 0) {
+                btnHitchens.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnHitchens.onclick = applyHitchens;
+            } else {
+                btnHitchens.classList.add('opacity-50', 'cursor-not-allowed');
+                btnHitchens.onclick = null;
+            }
+
+            // Sagan: Applies if Y is high but X is not 1
+            if (claim.y === 1 && claim.x !== 1) {
+                btnSagan.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnSagan.onclick = applySagan;
+            } else {
+                btnSagan.classList.add('opacity-50', 'cursor-not-allowed');
+                btnSagan.onclick = null;
+            }
+
+            // Landauer: Only applies to intervening claims
+            if (claim.is_intervening && claim.x !== -1) {
+                btnLandauer.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnLandauer.onclick = applyLandauer;
+            } else {
+                btnLandauer.classList.add('opacity-50', 'cursor-not-allowed');
+                btnLandauer.onclick = null;
+            }
+        }
+
+        function applyHitchens() {
+            const claimIndex = claims.findIndex(c => c.id === activeClaimId);
+            if (claimIndex > -1 && claims[claimIndex].x === 0) {
+                // Asserted without evidence = dismissed without evidence
+                claims[claimIndex].y = 0;
+                renderAll();
+            }
+        }
+
+        function applySagan() {
+            const claimIndex = claims.findIndex(c => c.id === activeClaimId);
+            if (claimIndex > -1 && claims[claimIndex].y === 1 && claims[claimIndex].x !== 1) {
+                // Extraordinary claim lacks extraordinary evidence. Route to Hitchens or lock to existing X.
+                if (claims[claimIndex].x === 0) {
+                    applyHitchens(); // Drops to 0,0
+                } else if (claims[claimIndex].x === -1) {
+                    claims[claimIndex].y = -1; // Force alignment to negative reality (-1, -1)
+                }
+                renderAll();
+            }
+        }
+
+        function applyLandauer() {
+            const claimIndex = claims.findIndex(c => c.id === activeClaimId);
+            if (claimIndex > -1 && claims[claimIndex].is_intervening) {
+                // Intervening claims must produce thermodynamic heat. Absence of Stenger Spikes = falsified.
+                claims[claimIndex].x = -1; 
+                renderAll();
+                
+                // Note: The Y remains unchanged initially, exposing the massive |e|=2 residual 
+                // until the user is forced to apply Sagan/Hitchens to resolve the dissonance.
+            }
+        }
+
+        // Boot the system
+        window.onload = init;
+    </script>
+</body>
+</html>
