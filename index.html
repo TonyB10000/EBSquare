@@ -54,6 +54,10 @@
         .trajectory-point { fill: #94a3b8; r: 3; }
         .trajectory-label { font-family: 'JetBrains Mono', monospace; font-size: 4px; fill: #64748b; }
 
+        /* Quinean Web styling */
+        .quinean-link { stroke: #a855f7; stroke-width: 1; stroke-dasharray: 2; opacity: 0.3; transition: all 0.5s ease; }
+        .shockwave { stroke: #fbbf24; stroke-width: 2.5; stroke-dasharray: 0; opacity: 0.9; filter: drop-shadow(0 0 6px #fbbf24); }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
@@ -69,9 +73,9 @@
         <!-- Header Overlay -->
         <div class="absolute top-6 left-6 z-10">
             <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white mb-1">
-                EB Engine <span class="text-blue-500">v1.0</span>
+                EB Engine <span class="text-blue-500">v1.1</span>
             </h1>
-            <p class="text-slate-400 font-mono text-sm">Thermodynamic Epistemology Simulator</p>
+            <p class="text-slate-400 font-mono text-sm">Thermodynamic & Bayesian Epistemology Simulator</p>
         </div>
 
         <!-- System Stats Overlay -->
@@ -91,43 +95,35 @@
 
         <!-- SVG Grid Container -->
         <div class="w-full max-w-2xl aspect-square bg-grid rounded-xl border border-slate-700 shadow-2xl relative overflow-hidden">
-            <!-- viewBox scales from -120 to 120. (0,0) is center. Y is inverted in SVG vs Cartesian -->
             <svg id="cartesian-plane" viewBox="-120 -120 240 240" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                
-                <!-- Grid Lines (Background) -->
+                <!-- Grid Lines -->
                 <line x1="-100" y1="-50" x2="100" y2="-50" class="axis-line opacity-20" />
                 <line x1="-100" y1="50" x2="100" y2="50" class="axis-line opacity-20" />
                 <line x1="-50" y1="-100" x2="-50" y2="100" class="axis-line opacity-20" />
                 <line x1="50" y1="-100" x2="50" y2="100" class="axis-line opacity-20" />
 
-                <!-- The Line of Unfalsifiability (X = 0) -->
+                <!-- Lines -->
                 <line x1="0" y1="-110" x2="0" y2="110" class="unfalsifiable-line" />
                 <text x="3" y="-105" class="grid-text" opacity="0.7">x=0 (Unfalsifiable)</text>
-
-                <!-- The Humean Line (Y = X) -->
-                <!-- SVG Y is down, so (x=-100, y=-100 cartesian) is (-100, 100 svg) -->
                 <line x1="-100" y1="100" x2="100" y2="-100" class="humean-line" />
                 <text x="60" y="-70" class="grid-text fill-green-500" opacity="0.8">y=x (Zero Entropy)</text>
 
-                <!-- Main X and Y Axes -->
+                <!-- Main Axes -->
                 <line x1="-110" y1="0" x2="110" y2="0" class="axis-line" stroke-width="1.5" />
-                <!-- Y-axis overlaps x=0, already drawn, but let's reinforce it -->
                 <line x1="0" y1="-110" x2="0" y2="110" class="axis-line" stroke-width="1.5" />
 
-                <!-- Axis Labels -->
                 <text x="100" y="-4" class="grid-text" text-anchor="end">X: Evidence (1)</text>
                 <text x="-100" y="-4" class="grid-text">X: Falsified (-1)</text>
                 <text x="4" y="-100" class="grid-text">Y: Belief (1)</text>
                 <text x="4" y="100" class="grid-text">Y: Disbelief (-1)</text>
 
-                <!-- Trajectory Definitions -->
+                <!-- Trajectories and Nodes -->
                 <defs>
                     <marker id="arrowhead" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
                         <polygon points="0 0, 6 2, 0 4" fill="#475569" />
                     </marker>
                 </defs>
-
-                <!-- Trajectories and Dynamic Nodes -->
+                <g id="quinean-links"></g>
                 <g id="trajectory-lines"></g>
                 <g id="data-nodes"></g>
             </svg>
@@ -155,13 +151,13 @@
                 <div class="space-y-4 flex-1">
                     <div>
                         <label class="block text-xs uppercase text-slate-500 mb-1 font-bold">Claim Name</label>
-                        <input type="text" id="new-claim-name" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm focus:border-blue-500 focus:outline-none" placeholder="e.g., Russell's Teapot">
+                        <input type="text" id="new-claim-name" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm focus:border-blue-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs uppercase text-slate-500 mb-1 font-bold">Description</label>
-                        <textarea id="new-claim-desc" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm h-20 focus:border-blue-500 focus:outline-none" placeholder="Elaborate on the premise..."></textarea>
+                        <textarea id="new-claim-desc" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm h-20 focus:border-blue-500 focus:outline-none"></textarea>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-3 gap-4">
                         <div>
                             <label class="block text-xs uppercase text-slate-500 mb-1 font-bold">Evidence (X)</label>
                             <input type="number" id="new-claim-x" min="-1" max="1" step="0.1" value="0" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm font-mono focus:border-blue-500 focus:outline-none">
@@ -169,6 +165,10 @@
                         <div>
                             <label class="block text-xs uppercase text-slate-500 mb-1 font-bold">Belief (Y)</label>
                             <input type="number" id="new-claim-y" min="-1" max="1" step="0.1" value="1" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm font-mono focus:border-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase text-slate-500 mb-1 font-bold">Ad Hoc Params (k)</label>
+                            <input type="number" id="new-claim-k" min="1" max="10" step="1" value="1" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm font-mono focus:border-blue-500 focus:outline-none">
                         </div>
                     </div>
                     <div class="flex items-center mt-4">
@@ -185,10 +185,10 @@
             <!-- AI Chat View -->
             <div id="ai-chat-view" class="hidden h-full flex flex-col">
                 <h3 class="text-lg font-bold text-white mb-2">Epistemic AI Oracle</h3>
-                <p class="text-slate-400 text-xs mb-4">Submit logical syllogisms or empirical evidence. If the AI verifies your logic (shifting X), your belief (Y) will be force-coupled to maintain Humean equilibrium.</p>
+                <p class="text-slate-400 text-xs mb-4">Submit logical syllogisms. The AI will evaluate your evidence using Bayesian marginal likelihoods and the Deep Well Alpha threshold.</p>
                 
                 <div id="ai-no-claim" class="text-center p-4 bg-slate-900 rounded border border-slate-800 text-slate-500 text-sm">
-                    Select an Active Claim from the active tab first to begin the dialectic.
+                    Select an Active Claim from the active tab first.
                 </div>
 
                 <div id="ai-chat-interface" class="hidden flex-1 flex flex-col h-full overflow-hidden">
@@ -207,14 +207,14 @@
 
             <!-- Active Claims View -->
             <div id="active-claims-view" class="block">
-                <p class="text-slate-400 text-sm mb-6">Select a claim to analyze its coordinates and apply logical filters to minimize thermodynamic residuals.</p>
+                <p class="text-slate-400 text-sm mb-6">Select a claim to analyze coordinates and apply physical/mathematical filters.</p>
 
                 <!-- Claim List -->
                 <div id="claim-list" class="flex flex-col gap-3 mb-8">
                     <!-- Injected via JS -->
                 </div>
 
-                <!-- Active Claim Details & Filters (Hidden initially) -->
+                <!-- Active Claim Details -->
                 <div id="active-claim-panel" class="hidden bg-slate-900 border border-slate-700 rounded-xl p-5 shadow-lg">
                     <div class="flex justify-between items-start mb-2">
                         <h3 id="active-name" class="text-lg font-bold text-white leading-tight">Claim Name</h3>
@@ -222,20 +222,32 @@
                     </div>
                     <p id="active-desc" class="text-xs text-slate-400 mb-4 line-clamp-3">Description...</p>
 
-                    <div class="grid grid-cols-2 gap-4 mb-6 font-mono text-sm bg-slate-950 p-3 rounded-lg border border-slate-800">
+                    <div class="grid grid-cols-3 gap-3 mb-6 font-mono text-sm bg-slate-950 p-3 rounded-lg border border-slate-800 text-center">
                         <div>
-                            <span class="text-slate-500 block text-xs uppercase mb-1">Evidence (X)</span>
+                            <span class="text-slate-500 block text-[10px] uppercase mb-1">Evidence(X)</span>
                             <span id="active-x" class="text-white font-bold">0</span>
                         </div>
-                        <div>
-                            <span class="text-slate-500 block text-xs uppercase mb-1">Belief (Y)</span>
+                        <div class="border-l border-slate-800">
+                            <span class="text-slate-500 block text-[10px] uppercase mb-1">Belief(Y)</span>
                             <span id="active-y" class="text-white font-bold">0</span>
+                        </div>
+                        <div class="border-l border-slate-800">
+                            <span class="text-slate-500 block text-[10px] uppercase mb-1">Params(k)</span>
+                            <span id="active-k" class="text-white font-bold">1</span>
                         </div>
                     </div>
 
                     <div class="space-y-3">
                         <h4 class="text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">Algorithmic Filters</h4>
                         
+                        <!-- New Ockham Filter -->
+                        <button id="btn-ockham" onclick="applyBayesianOckham()" class="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition-colors group">
+                            <div class="flex items-center text-sm font-semibold text-white">
+                                <i class="fa-solid fa-chart-area w-6 text-slate-400 group-hover:text-pink-400 transition-colors"></i> Bayesian Ockham Penalty
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
+                        </button>
+
                         <button id="btn-hitchens" onclick="applyHitchens()" class="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition-colors group">
                             <div class="flex items-center text-sm font-semibold text-white">
                                 <i class="fa-solid fa-gavel w-6 text-slate-400 group-hover:text-blue-400 transition-colors"></i> Hitchens's Razor
@@ -257,16 +269,9 @@
                             <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
                         </button>
 
-                        <button id="btn-occam" onclick="applyOccam()" class="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition-colors group">
-                            <div class="flex items-center text-sm font-semibold text-white">
-                                <i class="fa-solid fa-cut w-6 text-slate-400 group-hover:text-orange-400 transition-colors"></i> Occam's Razor
-                            </div>
-                            <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
-                        </button>
-
                         <button id="btn-newton" onclick="applyNewton()" class="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition-colors group">
                             <div class="flex items-center text-sm font-semibold text-white">
-                                <i class="fa-solid fa-meteor w-6 text-slate-400 group-hover:text-orange-500 transition-colors"></i> Alder's Razor (Laser Sword)
+                                <i class="fa-solid fa-meteor w-6 text-slate-400 group-hover:text-orange-500 transition-colors"></i> Alder's Razor
                             </div>
                             <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
                         </button>
@@ -274,6 +279,13 @@
                         <button id="btn-popper" onclick="applyPopper()" class="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition-colors group">
                             <div class="flex items-center text-sm font-semibold text-white">
                                 <i class="fa-solid fa-vial-circle-check w-6 text-slate-400 group-hover:text-emerald-400 transition-colors"></i> Popper's Falsifiability
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
+                        </button>
+                        
+                        <button id="btn-solomonoff" onclick="applySolomonoff()" class="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition-colors group">
+                            <div class="flex items-center text-sm font-semibold text-white">
+                                <i class="fa-solid fa-microchip w-6 text-slate-400 group-hover:text-cyan-400 transition-colors"></i> Solomonoff Prior
                             </div>
                             <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
                         </button>
@@ -285,76 +297,90 @@
     </aside>
 
     <script>
-        // Database of Claims
+        // Database of Claims with new parameter complexity (k) limits
         const initialClaims = [
             {
                 id: 'g0',
                 name: 'The Intervening God (G0)',
                 description: 'A tri-omni deity that answers prayers, parts seas, and physically alters the universe. Requires a massive amount of physical computation.',
-                x: 0, // Unfalsifiable until tested
-                y: 1, // Asserter's absolute belief
+                x: 0, y: 1, 
                 is_intervening: true,
-                history: []
+                parameters: 5, // Exogenous initialization, teleology, local entropic override, temporal perturbations, global invariant.
+                links: []
+            },
+            {
+                id: 'manifestation',
+                name: 'Manifestation',
+                description: 'The belief that conscious human thought directly alters physical reality and probability to attract desired outcomes without physical action.',
+                x: 0, y: 1, 
+                is_intervening: true,
+                parameters: 3, // Brainwave energy coupling, macroscopic probabilistic tuning, intent translation.
+                links: []
+            },
+            {
+                id: 'yec',
+                name: 'Young Earth (6k Yrs)',
+                description: 'The assertion that the Earth and the observable universe were created approximately 6,000 years ago.',
+                x: 0, y: 1, 
+                is_intervening: false,
+                parameters: 4, // Requires ad-hoc overrides for light speed, isotopic decay rates, geology, and cosmic expansion.
+                links: [{ target: 'g0', weight: 0.6 }] // YEC strongly props up G0
             },
             {
                 id: 'pythagoras',
                 name: 'Pythagorean Fava Beans',
                 description: 'The belief that hollow fava bean stems act as literal ladders for reincarnated human souls.',
-                x: -1, // Falsified biology
-                y: 1, // Pythagoras died for this
+                x: -1, y: 1, 
                 is_intervening: false,
-                history: [
-                    {x: 0, y: 1, label: '500 BC'}
-                ]
+                parameters: 1,
+                history: [{x: 0, y: 1, label: '500 BC'}],
+                links: []
             },
             {
                 id: 'geocentrism',
                 name: 'Ptolemaic Geocentrism',
                 description: 'The Earth is fixed at the center. Requires invisible epicycles to explain retrograde motion.',
-                x: -1, // Falsified by Galileo/Newton
-                y: 1, // Church dogma
+                x: -1, y: 1, 
                 is_intervening: false,
+                parameters: 4, // Nested epicycles
                 history: [
                     {x: 0.5, y: 1, label: 'Ptolemy'},
                     {x: -0.2, y: 1, label: 'Copernicus'},
                     {x: -0.8, y: 1, label: 'Galileo'}
-                ]
+                ],
+                links: [{ target: 'g0', weight: 0.3 }]
             },
             {
                 id: 'mwi',
                 name: 'Many-Worlds Interpretation',
                 description: 'Wave function branches into entire physical universes. Falsified by the lack of Stenger Spikes (thermodynamic heat) at bifurcations.',
-                x: -1, // No heat signature
-                y: 1, // Popular amongst theoretical physicists
+                x: -1, y: 1, 
                 is_intervening: false,
-                history: [
-                    {x: 0, y: 1, label: 'Everett (1957)'}
-                ]
+                parameters: 1, // Extremely parsimonious mathematically, ontologically heavy
+                history: [{x: 0, y: 1, label: 'Everett (1957)'}],
+                links: []
             },
             {
                 id: 'relativity',
                 name: 'General Relativity',
                 description: 'Gravity is the curvature of spacetime. Verified by Eddington eclipse experiment and GPS synchronization.',
-                x: 1, // Empirically proven
-                y: 1, // Scientific consensus
+                x: 1, y: 1, 
                 is_intervening: false,
+                parameters: 1,
                 history: [
                     {x: 0, y: 0.5, label: 'Einstein (1915)'},
                     {x: 0.8, y: 0.9, label: 'Eddington'}
-                ]
+                ],
+                links: []
             }
         ];
 
         let claims = [];
         let activeClaimId = null;
 
-        // Initialization
-        function init() {
-            resetSystem();
-        }
+        function init() { resetSystem(); }
 
         function resetSystem() {
-            // Deep copy to break references
             claims = JSON.parse(JSON.stringify(initialClaims));
             activeClaimId = null;
             document.getElementById('active-claim-panel').classList.add('hidden');
@@ -363,23 +389,19 @@
         }
 
         function switchTab(tab) {
-            // Hide all views
             document.getElementById('active-claims-view').classList.add('hidden');
             document.getElementById('add-claim-view').classList.add('hidden');
             document.getElementById('ai-chat-view').classList.add('hidden');
             
-            // Remove block/flex classes if present
             document.getElementById('active-claims-view').classList.remove('block');
             document.getElementById('add-claim-view').classList.remove('block');
             document.getElementById('ai-chat-view').classList.remove('flex');
             
-            // Reset button styles
             ['active', 'add', 'ai'].forEach(t => {
                 const btn = document.getElementById(`tab-btn-${t}`);
                 if (btn) btn.className = "flex-1 py-4 text-sm font-semibold text-slate-400 hover:text-white border-b-2 border-transparent transition-colors";
             });
             
-            // Activate selected tab
             if (tab === 'active') {
                 document.getElementById('active-claims-view').classList.remove('hidden');
                 document.getElementById('active-claims-view').classList.add('block');
@@ -452,10 +474,8 @@
 
             const claim = claims.find(c => c.id === activeClaimId);
             if (!claim) return;
-
             if (!claim.aiHistory) claim.aiHistory = [];
 
-            // Add user input to local history and UI
             claim.aiHistory.push({ role: 'user', text: text });
             appendChatMessage('user', text);
             inputEl.value = '';
@@ -464,7 +484,6 @@
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
             btn.disabled = true;
 
-            // Generate API Chat Context
             const geminiHistory = claim.aiHistory
                 .filter(msg => msg.role === 'user' || msg.role === 'model')
                 .map(msg => ({
@@ -472,18 +491,27 @@
                     parts: [{ text: msg.text }]
                 }));
 
-            // Force JSON output schema to safely extract updated coordinates
+            // NEW AI SYSTEM INSTRUCTION INTEGRATING THE PDF MATH
+            const systemPromptText = `You are an epistemological thermodynamic engine AI. You evaluate evidence and syllogisms for the claim: "${claim.name}" (${claim.description}). Current Evidence (X) score: ${claim.x}. 
+            
+CRITICAL DIRECTIVE: You must rigorously incorporate the mathematical bounds established in the foundational document 'Exogenous Model Probability Analysis.pdf':
+1. Ad Hoc Penalties: Identify if the user's argument (or the claim itself) relies on stacking ad hoc parameters (e.g., 'meta-time', 'magic', 'unobserved dimensions') to survive empirical falsification. If so, apply the Bayesian Ockham Factor (geometric decay), which exponentially dilutes the model's marginal likelihood.
+2. Fréchet Inequalities: Recognize that the joint probability of a composite model cannot exceed its least probable constituent. 
+3. Entropic Barriers: Interventions in closed systems face a massive configurational bottleneck (loss of microstates). Penalize accordingly.
+4. Deep Well Alpha Threshold: To achieve a positive Evidence (X) score, the model must surpass an alpha of 10^-5. Models requiring massive ad hoc tuning fail this threshold completely and fall deep into the negative.
+
+Evaluate the logic, validity, and mathematical soundness. Adjust the X coordinate (-1.0 to 1.0). If an argument effectively traps a claim in an ad hoc cascade or definitional contradiction, do not hesitate to push X decisively toward -1.0. 
+Respond strictly in JSON format.`;
+
             const payload = {
                 contents: geminiHistory,
-                systemInstruction: {
-                    parts: [{ text: `You are an epistemological thermodynamic engine AI. You evaluate evidence and syllogisms for the claim: "${claim.name}" (${claim.description}). Current Evidence (X) score: ${claim.x}. \nEvaluate the logic, validity, soundness, and empirical weight of the user's argument. Adjust the X coordinate (Evidence) between -1.0 and 1.0 based on this logic. (-1 = falsified/impossible, 0 = unfalsifiable/no evidence, 1 = absolute proof). \nRespond strictly in JSON format matching the schema.` }]
-                },
+                systemInstruction: { parts: [{ text: systemPromptText }] },
                 generationConfig: {
                     responseMimeType: "application/json",
                     responseSchema: {
                         type: "OBJECT",
                         properties: {
-                            "message": { type: "STRING", description: "Your conversational response evaluating the user's logic." },
+                            "message": { type: "STRING", description: "Your conversational response evaluating the user's logic using the Exogenous Model Probability Analysis parameters." },
                             "new_x": { type: "NUMBER", description: "The newly calculated X coordinate (-1.0 to 1.0)" }
                         },
                         required: ["message", "new_x"]
@@ -491,7 +519,7 @@
                 }
             };
 
-            const apiKey = ""; // Handled automatically by Canvas
+            const apiKey = ""; // API KEY handled by Canvas environment
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
             try {
@@ -509,15 +537,11 @@
                     claim.aiHistory.push({ role: 'model', text: parsed.message });
                     appendChatMessage('model', parsed.message);
                     
-                    // The core mechanic: Humean Coupling
                     const prevX = claim.x;
                     const newX = Math.max(-1, Math.min(1, parsed.new_x));
                     
                     if (prevX !== newX) {
-                        saveHistory(claims.indexOf(claim), 'AI Evaluation');
-                        claim.x = newX;
-                        // Force Belief (Y) to equal Evidence (X)
-                        claim.y = newX; 
+                        setClaimCoordinates(claims.indexOf(claim), newX, newX, 'AI Evaluation');
                         
                         const sysMsg = `HUMEAN DICTUM TRIGGERED: Evidence shifted to ${newX.toFixed(2)}. Belief (Y) force-coupled to ${newX.toFixed(2)}.`;
                         claim.aiHistory.push({ role: 'system', text: sysMsg });
@@ -540,6 +564,7 @@
             const desc = document.getElementById('new-claim-desc').value || 'No description provided.';
             const x = parseFloat(document.getElementById('new-claim-x').value);
             const y = parseFloat(document.getElementById('new-claim-y').value);
+            const k = parseInt(document.getElementById('new-claim-k').value) || 1;
             const isIntervening = document.getElementById('new-claim-intervening').checked;
             
             const newClaim = {
@@ -548,66 +573,116 @@
                 description: desc,
                 x: isNaN(x) ? 0 : Math.max(-1, Math.min(1, x)),
                 y: isNaN(y) ? 0 : Math.max(-1, Math.min(1, y)),
+                parameters: Math.max(1, k),
                 is_intervening: isIntervening,
                 history: []
             };
             
             claims.push(newClaim);
             
-            // Reset form
             document.getElementById('new-claim-name').value = '';
             document.getElementById('new-claim-desc').value = '';
             document.getElementById('new-claim-x').value = '0';
             document.getElementById('new-claim-y').value = '1';
+            document.getElementById('new-claim-k').value = '1';
             document.getElementById('new-claim-intervening').checked = false;
             
-            // Switch back and view
             switchTab('active');
             selectClaim(newClaim.id);
         }
 
-        // Calculate the thermodynamic residual |y - x|
-        function calculateResidual(x, y) {
-            return Math.abs(y - x);
-        }
+        function calculateResidual(x, y) { return Math.abs(y - x); }
 
-        // Determine heat class based on residual
         function getHeatClass(residual) {
-            if (residual <= 0.2) return 'heat-0'; // Humean line
-            if (residual <= 1.2) return 'heat-1'; // Cognitive dissonance
-            if (residual <= 2.0) return 'heat-2'; // Maximum dissonance/falsified
+            if (residual <= 0.2) return 'heat-0';
+            if (residual <= 1.2) return 'heat-1';
             return 'heat-2';
         }
 
-        // Map Cartesian (-1 to 1) to SVG ViewBox (-100 to 100)
+        function setClaimCoordinates(claimIndex, newX, newY, sourceLabel, triggerShockwave = true, visited = new Set()) {
+            const claim = claims[claimIndex];
+            if (visited.has(claim.id)) return;
+            visited.add(claim.id); // Prevent infinite loops
+
+            const oldX = claim.x;
+            claim.x = Math.max(-1, Math.min(1, newX));
+            if (newY !== null) claim.y = Math.max(-1, Math.min(1, newY));
+            
+            saveHistory(claimIndex, sourceLabel);
+            
+            const deltaX = claim.x - oldX;
+
+            // Trigger Quinean Shockwave if X changed significantly
+            if (triggerShockwave && Math.abs(deltaX) > 0.05 && claim.links) {
+                claim.links.forEach(link => {
+                    const targetIndex = claims.findIndex(c => c.id === link.target);
+                    if (targetIndex > -1) {
+                        const targetClaim = claims[targetIndex];
+                        const targetNewX = targetClaim.x + (deltaX * link.weight);
+                        
+                        // Visual shockwave effect
+                        const line = document.getElementById(`link-${claim.id}-${targetClaim.id}`);
+                        if (line) {
+                            line.classList.add('shockwave');
+                            setTimeout(() => line.classList.remove('shockwave'), 1000);
+                        }
+
+                        // Recursive propagation with delay for visual impact
+                        setTimeout(() => {
+                            // Auto-Humean snap for cascading beliefs
+                            setClaimCoordinates(targetIndex, targetNewX, targetNewX, `Quinean Cascade (from ${claim.name})`, true, visited);
+                            renderAll();
+                        }, 600);
+                    }
+                });
+            }
+        }
+
         function mapToSVG(x, y) {
-            return {
-                cx: x * 100,
-                cy: -y * 100 // Invert Y for SVG coordinates
-            };
+            return { cx: x * 100, cy: -y * 100 };
         }
 
         function renderAll() {
+            renderQuineanWeb();
             renderTrajectories();
             renderSVG();
             renderSidebar();
             updateMetrics();
-            
-            if (activeClaimId) {
-                updateActivePanel();
-            }
+            if (activeClaimId) updateActivePanel();
+        }
+
+        function renderQuineanWeb() {
+            const container = document.getElementById('quinean-links');
+            container.innerHTML = '';
+
+            claims.forEach(claim => {
+                if (!claim.links) return;
+                const sourceCoords = mapToSVG(claim.x, claim.y);
+                
+                claim.links.forEach(link => {
+                    const targetClaim = claims.find(c => c.id === link.target);
+                    if (targetClaim) {
+                        const targetCoords = mapToSVG(targetClaim.x, targetClaim.y);
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', sourceCoords.cx);
+                        line.setAttribute('y1', sourceCoords.cy);
+                        line.setAttribute('x2', targetCoords.cx);
+                        line.setAttribute('y2', targetCoords.cy);
+                        line.setAttribute('id', `link-${claim.id}-${targetClaim.id}`);
+                        line.setAttribute('class', 'quinean-link');
+                        container.appendChild(line);
+                    }
+                });
+            });
         }
 
         function renderTrajectories() {
             const container = document.getElementById('trajectory-lines');
             container.innerHTML = '';
-            
             if (!activeClaimId) return;
-            
             const claim = claims.find(c => c.id === activeClaimId);
             if (!claim || !claim.history || claim.history.length === 0) return;
 
-            // Draw line through history to current point
             const points = [...claim.history, {x: claim.x, y: claim.y}];
             let pathD = "";
             
@@ -616,7 +691,6 @@
                 if (i === 0) pathD += `M ${svgCoords.cx} ${svgCoords.cy} `;
                 else pathD += `L ${svgCoords.cx} ${svgCoords.cy} `;
                 
-                // Draw historical nodes (don't draw over current node)
                 if (i < points.length - 1) {
                     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                     circle.setAttribute('cx', svgCoords.cx);
@@ -643,7 +717,7 @@
 
         function renderSVG() {
             const container = document.getElementById('data-nodes');
-            container.innerHTML = ''; // Clear existing nodes
+            container.innerHTML = '';
 
             claims.forEach(claim => {
                 const residual = calculateResidual(claim.x, claim.y);
@@ -651,12 +725,10 @@
                 const svgCoords = mapToSVG(claim.x, claim.y);
                 const isActive = claim.id === activeClaimId;
 
-                // Create Group
                 const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                 g.setAttribute('class', 'node');
                 g.onclick = () => selectClaim(claim.id);
 
-                // Create Circle
                 const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                 circle.setAttribute('cx', svgCoords.cx);
                 circle.setAttribute('cy', svgCoords.cy);
@@ -668,7 +740,6 @@
                     circle.setAttribute('stroke-width', '2');
                 }
 
-                // Create Label
                 const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                 text.setAttribute('x', svgCoords.cx + 8);
                 text.setAttribute('y', svgCoords.cy + 3);
@@ -687,10 +758,8 @@
 
             claims.forEach(claim => {
                 const residual = calculateResidual(claim.x, claim.y);
-                const isActive = claim.id === activeClaimId;
-                
-                // Color map for UI dots
                 const dotColor = residual <= 0.2 ? 'bg-blue-500' : (residual <= 1.2 ? 'bg-yellow-500' : 'bg-red-500');
+                const isActive = claim.id === activeClaimId;
                 const borderClass = isActive ? 'border-blue-500 bg-slate-800' : 'border-slate-700 bg-slate-900 hover:border-slate-500';
 
                 const div = document.createElement('div');
@@ -704,7 +773,6 @@
                     </div>
                     <span class="text-xs font-mono text-slate-400 shrink-0">|e| = ${residual.toFixed(1)}</span>
                 `;
-                
                 list.appendChild(div);
             });
         }
@@ -714,7 +782,6 @@
             document.getElementById('global-residual').textContent = totalE.toFixed(2);
             document.getElementById('total-entities').textContent = claims.length;
 
-            // Update color based on system entropy
             const globalResEl = document.getElementById('global-residual');
             if (totalE > 4) globalResEl.className = 'font-bold text-red-500';
             else if (totalE > 1) globalResEl.className = 'font-bold text-yellow-500';
@@ -724,8 +791,8 @@
         function selectClaim(id) {
             activeClaimId = id;
             document.getElementById('active-claim-panel').classList.remove('hidden');
-            renderAll(); // Re-render to highlight selected
-            updateAIPanel(); // Refresh AI context
+            renderAll();
+            updateAIPanel(); 
         }
 
         function updateActivePanel() {
@@ -734,8 +801,9 @@
 
             document.getElementById('active-name').textContent = claim.name;
             document.getElementById('active-desc').textContent = claim.description;
-            document.getElementById('active-x').textContent = claim.x.toFixed(1);
-            document.getElementById('active-y').textContent = claim.y.toFixed(1);
+            document.getElementById('active-x').textContent = claim.x.toFixed(2);
+            document.getElementById('active-y').textContent = claim.y.toFixed(2);
+            document.getElementById('active-k').textContent = claim.parameters || 1;
 
             const residual = calculateResidual(claim.x, claim.y);
             const badge = document.getElementById('active-residual-badge');
@@ -747,24 +815,35 @@
                 'bg-red-900/50 border-red-500 text-red-400'
             }`;
 
-            // Configure Button states based on mathematical applicability
+            // Button States
+            const btnOckham = document.getElementById('btn-ockham');
             const btnHitchens = document.getElementById('btn-hitchens');
             const btnSagan = document.getElementById('btn-sagan');
             const btnLandauer = document.getElementById('btn-landauer');
-            const btnOccam = document.getElementById('btn-occam');
             const btnNewton = document.getElementById('btn-newton');
             const btnPopper = document.getElementById('btn-popper');
 
-            // Hitchens: Only applies if X == 0
+            // Ockham Penalty: Always available if k > 1 and not fully falsified
+            if (claim.parameters > 1 && claim.x > -0.99) {
+                btnOckham.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnOckham.onclick = applyBayesianOckham;
+            } else {
+                btnOckham.classList.add('opacity-50', 'cursor-not-allowed');
+                btnOckham.onclick = null;
+            }
+
             if (claim.x === 0 && claim.y !== 0) {
                 btnHitchens.classList.remove('opacity-50', 'cursor-not-allowed');
                 btnHitchens.onclick = applyHitchens;
+                btnNewton.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnNewton.onclick = applyNewton;
             } else {
                 btnHitchens.classList.add('opacity-50', 'cursor-not-allowed');
                 btnHitchens.onclick = null;
+                btnNewton.classList.add('opacity-50', 'cursor-not-allowed');
+                btnNewton.onclick = null;
             }
 
-            // Sagan: Applies if Y is high but X is not 1
             if (claim.y === 1 && claim.x !== 1) {
                 btnSagan.classList.remove('opacity-50', 'cursor-not-allowed');
                 btnSagan.onclick = applySagan;
@@ -773,7 +852,6 @@
                 btnSagan.onclick = null;
             }
 
-            // Landauer: Only applies to intervening claims
             if (claim.is_intervening && claim.x !== -1) {
                 btnLandauer.classList.remove('opacity-50', 'cursor-not-allowed');
                 btnLandauer.onclick = applyLandauer;
@@ -782,25 +860,6 @@
                 btnLandauer.onclick = null;
             }
 
-            // Occam: Applies if intervening and X <= 0, trims extreme Y
-            if (claim.is_intervening && claim.x <= 0 && Math.abs(claim.y) > 0.5) {
-                btnOccam.classList.remove('opacity-50', 'cursor-not-allowed');
-                btnOccam.onclick = applyOccam;
-            } else {
-                btnOccam.classList.add('opacity-50', 'cursor-not-allowed');
-                btnOccam.onclick = null;
-            }
-
-            // Newton: Alder's Razor - applies if X is strictly 0 (cannot be experimented on)
-            if (claim.x === 0 && claim.y !== 0) {
-                btnNewton.classList.remove('opacity-50', 'cursor-not-allowed');
-                btnNewton.onclick = applyNewton;
-            } else {
-                btnNewton.classList.add('opacity-50', 'cursor-not-allowed');
-                btnNewton.onclick = null;
-            }
-
-            // Popper: Applies if claim is not intervening (no heat) and has X=0 (unfalsifiable)
             if (!claim.is_intervening && claim.x === 0 && claim.y !== 0) {
                 btnPopper.classList.remove('opacity-50', 'cursor-not-allowed');
                 btnPopper.onclick = applyPopper;
@@ -808,13 +867,36 @@
                 btnPopper.classList.add('opacity-50', 'cursor-not-allowed');
                 btnPopper.onclick = null;
             }
+
+            const btnSolomonoff = document.getElementById('btn-solomonoff');
+            if (claim.parameters > 1 && claim.x === 0) {
+                btnSolomonoff.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnSolomonoff.onclick = applySolomonoff;
+            } else {
+                btnSolomonoff.classList.add('opacity-50', 'cursor-not-allowed');
+                btnSolomonoff.onclick = null;
+            }
+        }
+
+        // NEW FILTER: The Bayesian Ockham Penalty
+        function applyBayesianOckham() {
+            const claimIndex = claims.findIndex(c => c.id === activeClaimId);
+            if (claimIndex > -1) {
+                const claim = claims[claimIndex];
+                const k = claim.parameters || 1;
+                
+                const penalty = Math.pow(0.05, k);
+                const newX = -1 + penalty;
+                
+                setClaimCoordinates(claimIndex, newX, null, `Ockham Penalty (k=${k})`);
+                renderAll();
+            }
         }
 
         function applyHitchens() {
             const claimIndex = claims.findIndex(c => c.id === activeClaimId);
             if (claimIndex > -1 && claims[claimIndex].x === 0) {
-                saveHistory(claimIndex, 'Hitchens Razor');
-                claims[claimIndex].y = 0;
+                setClaimCoordinates(claimIndex, 0, 0, 'Hitchens Razor');
                 renderAll();
             }
         }
@@ -822,12 +904,8 @@
         function applySagan() {
             const claimIndex = claims.findIndex(c => c.id === activeClaimId);
             if (claimIndex > -1 && claims[claimIndex].y === 1 && claims[claimIndex].x !== 1) {
-                saveHistory(claimIndex, 'Sagan Standard');
-                if (claims[claimIndex].x === 0) {
-                    claims[claimIndex].y = 0; 
-                } else if (claims[claimIndex].x === -1) {
-                    claims[claimIndex].y = -1; 
-                }
+                const newY = claims[claimIndex].x <= 0 ? claims[claimIndex].x : 0;
+                setClaimCoordinates(claimIndex, claims[claimIndex].x, newY, 'Sagan Standard');
                 renderAll();
             }
         }
@@ -835,17 +913,7 @@
         function applyLandauer() {
             const claimIndex = claims.findIndex(c => c.id === activeClaimId);
             if (claimIndex > -1 && claims[claimIndex].is_intervening) {
-                saveHistory(claimIndex, 'Landauer Limit');
-                claims[claimIndex].x = -1; 
-                renderAll();
-            }
-        }
-
-        function applyOccam() {
-            const claimIndex = claims.findIndex(c => c.id === activeClaimId);
-            if (claimIndex > -1) {
-                saveHistory(claimIndex, 'Occam Razor');
-                claims[claimIndex].y = claims[claimIndex].y > 0 ? 0.2 : -0.2;
+                setClaimCoordinates(claimIndex, -1, null, 'Landauer Limit');
                 renderAll();
             }
         }
@@ -853,8 +921,7 @@
         function applyNewton() {
             const claimIndex = claims.findIndex(c => c.id === activeClaimId);
             if (claimIndex > -1 && claims[claimIndex].x === 0) {
-                saveHistory(claimIndex, 'Alder Razor');
-                claims[claimIndex].y = 0;
+                setClaimCoordinates(claimIndex, 0, 0, 'Alder Razor');
                 renderAll();
             }
         }
@@ -862,8 +929,24 @@
         function applyPopper() {
             const claimIndex = claims.findIndex(c => c.id === activeClaimId);
             if (claimIndex > -1 && !claims[claimIndex].is_intervening && claims[claimIndex].x === 0) {
-                saveHistory(claimIndex, 'Popper Falsification');
-                claims[claimIndex].y = 0;
+                setClaimCoordinates(claimIndex, 0, 0, 'Popper Falsification');
+                renderAll();
+            }
+        }
+
+        function applySolomonoff() {
+            const claimIndex = claims.findIndex(c => c.id === activeClaimId);
+            if (claimIndex > -1) {
+                const claim = claims[claimIndex];
+                const k = claim.parameters || 1;
+                
+                const priorProb = Math.pow(2, -k);
+                const newX = -1 + (priorProb * 2); 
+                
+                const humeanSnap = confirm("Solomonoff Prior applied. Trigger Humean Dictum to match Belief (Y) to new Evidence (X)?");
+                const newY = humeanSnap ? newX : null;
+                
+                setClaimCoordinates(claimIndex, newX, newY, `Solomonoff Prior (k=${k})`);
                 renderAll();
             }
         }
@@ -874,7 +957,6 @@
             c.history.push({x: c.x, y: c.y, label: label});
         }
 
-        // Boot the system
         window.onload = init;
     </script>
 </body>
