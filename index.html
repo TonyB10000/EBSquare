@@ -148,7 +148,7 @@
             <!-- AI Chat View -->
             <div id="ai-chat-view" class="hidden h-full flex flex-col">
                 <h3 class="text-lg font-bold text-white mb-2">Epistemic AI Oracle</h3>
-                <p class="text-slate-400 text-xs mb-4">Submit logical syllogisms. The AI evaluates evidence using Bayesian marginal likelihoods and the Deep Well Alpha threshold.</p>
+                <p class="text-slate-400 text-xs mb-4">Submit logical syllogisms. The AI evaluates evidence using Bayesian marginal likelihoods, empirical search, and the Deep Well Alpha threshold.</p>
                 <div id="ai-no-claim" class="text-center p-4 bg-slate-900 rounded border border-slate-800 text-slate-500 text-sm">
                     Select an Active Claim from the active tab first.
                 </div>
@@ -373,11 +373,13 @@ CRITICAL DIRECTIVE: You must rigorously incorporate the mathematical bounds esta
 2. Fréchet Inequalities: The joint probability of a composite model cannot exceed its least probable constituent. 
 3. Entropic Barriers: Interventions in closed systems face a massive configurational bottleneck.
 4. Deep Well Alpha Threshold: To achieve a positive Evidence (X) score, the model must surpass an alpha of 10^-5. Models requiring massive ad hoc tuning fail this threshold completely.
+5. Forensic Fact-Checking: You have access to the googleSearch tool. You MUST cross-reference historical, criminal, or physical claims with real-world data. If the user omits mechanistic variables (e.g., CCTV, physical evidence, dogs) to artificially inflate a supernatural/ad-hoc premise, expose the missing variables and flatline the claim to -1.0.
 Evaluate the logic, validity, and mathematical soundness. Respond strictly in JSON format.`;
 
             const payload = {
                 contents: geminiHistory,
                 systemInstruction: { parts: [{ text: systemPromptText }] },
+                tools: [{ googleSearch: {} }],
                 generationConfig: {
                     responseMimeType: "application/json",
                     responseSchema: {
