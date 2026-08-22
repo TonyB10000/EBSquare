@@ -27,38 +27,20 @@
     </script>
     <style>
         body { background-color: #020617; color: #f8fafc; overflow-x: hidden; }
-        
-        /* Smooth transitions for data nodes moving on the grid */
-        .node {
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-        }
-        .node:hover circle {
-            stroke: white;
-            stroke-width: 3px;
-        }
-        
-        /* Grid styling */
+        .node { transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+        .node:hover circle { stroke: white; stroke-width: 3px; }
         .axis-line { stroke: #334155; stroke-width: 1; }
         .humean-line { stroke: #22c55e; stroke-width: 2; stroke-dasharray: 4; opacity: 0.7; }
         .unfalsifiable-line { stroke: #64748b; stroke-width: 2; stroke-dasharray: 4; opacity: 0.5; }
         .grid-text { font-family: 'JetBrains Mono', monospace; font-size: 6px; fill: #94a3b8; }
-        
-        /* Heat signatures */
-        .heat-0 { fill: #3b82f6; filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.6)); } /* Blue/Zero Entropy */
-        .heat-1 { fill: #eab308; filter: drop-shadow(0 0 6px rgba(234, 179, 8, 0.8)); } /* Yellow/Warning */
-        .heat-2 { fill: #ef4444; filter: drop-shadow(0 0 10px rgba(239, 68, 68, 1)); } /* Red/Max Dissonance */
-
-        /* Trajectory styling */
+        .heat-0 { fill: #3b82f6; filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.6)); } 
+        .heat-1 { fill: #eab308; filter: drop-shadow(0 0 6px rgba(234, 179, 8, 0.8)); } 
+        .heat-2 { fill: #ef4444; filter: drop-shadow(0 0 10px rgba(239, 68, 68, 1)); } 
         .trajectory-line { stroke: #475569; stroke-width: 1.5; stroke-dasharray: 4; fill: none; opacity: 0.6; }
         .trajectory-point { fill: #94a3b8; r: 3; }
         .trajectory-label { font-family: 'JetBrains Mono', monospace; font-size: 4px; fill: #64748b; }
-
-        /* Quinean Web styling */
         .quinean-link { stroke: #a855f7; stroke-width: 1; stroke-dasharray: 2; opacity: 0.3; transition: all 0.5s ease; }
         .shockwave { stroke: #fbbf24; stroke-width: 2.5; stroke-dasharray: 0; opacity: 0.9; filter: drop-shadow(0 0 6px #fbbf24); }
-
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
@@ -69,16 +51,12 @@
 
     <!-- Left Side: Cartesian Canvas -->
     <main class="w-full md:w-2/3 h-1/2 md:h-full relative flex items-center justify-center border-r border-slate-800 p-4 md:p-8">
-        
-        <!-- Header Overlay -->
         <div class="absolute top-6 left-6 z-10">
             <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white mb-1">
                 EB Engine <span class="text-blue-500">v1.1</span>
             </h1>
             <p class="text-slate-400 font-mono text-sm">Thermodynamic & Bayesian Epistemology Simulator</p>
         </div>
-
-        <!-- System Stats Overlay -->
         <div class="absolute bottom-6 left-6 z-10 bg-slate-900/80 p-4 rounded-lg border border-slate-700 backdrop-blur-sm">
             <div class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">System Metrics</div>
             <div class="flex flex-col gap-1 font-mono text-sm">
@@ -92,32 +70,22 @@
                 </div>
             </div>
         </div>
-
-        <!-- SVG Grid Container -->
         <div class="w-full max-w-2xl aspect-square bg-grid rounded-xl border border-slate-700 shadow-2xl relative overflow-hidden">
             <svg id="cartesian-plane" viewBox="-120 -120 240 240" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                <!-- Grid Lines -->
                 <line x1="-100" y1="-50" x2="100" y2="-50" class="axis-line opacity-20" />
                 <line x1="-100" y1="50" x2="100" y2="50" class="axis-line opacity-20" />
                 <line x1="-50" y1="-100" x2="-50" y2="100" class="axis-line opacity-20" />
                 <line x1="50" y1="-100" x2="50" y2="100" class="axis-line opacity-20" />
-
-                <!-- Lines -->
                 <line x1="0" y1="-110" x2="0" y2="110" class="unfalsifiable-line" />
                 <text x="3" y="-105" class="grid-text" opacity="0.7">x=0 (Unfalsifiable)</text>
                 <line x1="-100" y1="100" x2="100" y2="-100" class="humean-line" />
                 <text x="60" y="-70" class="grid-text fill-green-500" opacity="0.8">y=x (Zero Entropy)</text>
-
-                <!-- Main Axes -->
                 <line x1="-110" y1="0" x2="110" y2="0" class="axis-line" stroke-width="1.5" />
                 <line x1="0" y1="-110" x2="0" y2="110" class="axis-line" stroke-width="1.5" />
-
                 <text x="100" y="-4" class="grid-text" text-anchor="end">X: Evidence (1)</text>
                 <text x="-100" y="-4" class="grid-text">X: Falsified (-1)</text>
                 <text x="4" y="-100" class="grid-text">Y: Belief (1)</text>
                 <text x="4" y="100" class="grid-text">Y: Disbelief (-1)</text>
-
-                <!-- Trajectories and Nodes -->
                 <defs>
                     <marker id="arrowhead" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
                         <polygon points="0 0, 6 2, 0 4" fill="#475569" />
@@ -132,8 +100,6 @@
 
     <!-- Right Side: Control Panel -->
     <aside class="w-full md:w-1/3 h-1/2 md:h-full bg-panel flex flex-col shadow-[-10px_0_30px_rgba(0,0,0,0.5)] z-20">
-        
-        <!-- Tab Navigation -->
         <div class="flex border-b border-slate-800">
             <button id="tab-btn-active" onclick="switchTab('active')" class="flex-1 py-4 text-sm font-semibold text-white border-b-2 border-blue-500 bg-slate-800/50 transition-colors">Active Claims</button>
             <button id="tab-btn-add" onclick="switchTab('add')" class="flex-1 py-4 text-sm font-semibold text-slate-400 hover:text-white border-b-2 border-transparent transition-colors"><i class="fa-solid fa-plus mr-2"></i>New</button>
@@ -142,12 +108,10 @@
         </div>
 
         <div class="p-6 flex-1 overflow-y-auto" id="control-panel-content">
-            
             <!-- Add Claim Panel -->
             <div id="add-claim-view" class="hidden h-full flex flex-col">
                 <h3 class="text-lg font-bold text-white mb-2">Formulate Hypothesis</h3>
                 <p class="text-slate-400 text-xs mb-6">Inject a new epistemic entity into the simulation grid.</p>
-                
                 <div class="space-y-4 flex-1">
                     <div>
                         <label class="block text-xs uppercase text-slate-500 mb-1 font-bold">Claim Name</label>
@@ -173,10 +137,9 @@
                     </div>
                     <div class="flex items-center mt-4">
                         <input type="checkbox" id="new-claim-intervening" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900">
-                        <label class="ml-2 text-sm text-slate-300">Is Intervening? (Requires physical computation)</label>
+                        <label class="ml-2 text-sm text-slate-300">Is Intervening?</label>
                     </div>
                 </div>
-                
                 <button onclick="submitNewClaim()" class="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg shadow-lg transition-colors">
                     Inject Entity
                 </button>
@@ -185,17 +148,12 @@
             <!-- AI Chat View -->
             <div id="ai-chat-view" class="hidden h-full flex flex-col">
                 <h3 class="text-lg font-bold text-white mb-2">Epistemic AI Oracle</h3>
-                <p class="text-slate-400 text-xs mb-4">Submit logical syllogisms. The AI will evaluate your evidence using Bayesian marginal likelihoods and the Deep Well Alpha threshold.</p>
-                
+                <p class="text-slate-400 text-xs mb-4">Submit logical syllogisms. The AI evaluates evidence using Bayesian marginal likelihoods.</p>
                 <div id="ai-no-claim" class="text-center p-4 bg-slate-900 rounded border border-slate-800 text-slate-500 text-sm">
                     Select an Active Claim from the active tab first.
                 </div>
-
                 <div id="ai-chat-interface" class="hidden flex-1 flex flex-col h-full overflow-hidden">
-                    <div id="ai-chat-history" class="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
-                        <!-- Chat messages injected here -->
-                    </div>
-                    
+                    <div id="ai-chat-history" class="flex-1 overflow-y-auto space-y-4 mb-4 pr-2"></div>
                     <div class="mt-auto shrink-0 relative">
                         <textarea id="ai-user-input" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white text-sm focus:border-purple-500 focus:outline-none resize-none h-20" placeholder="e.g. Premise 1: ..."></textarea>
                         <button onclick="submitToAI()" id="ai-submit-btn" class="absolute bottom-3 right-3 bg-purple-600 hover:bg-purple-500 text-white rounded p-2 transition-colors">
@@ -207,21 +165,14 @@
 
             <!-- Active Claims View -->
             <div id="active-claims-view" class="block">
-                <p class="text-slate-400 text-sm mb-6">Select a claim to analyze coordinates and apply physical/mathematical filters.</p>
-
-                <!-- Claim List -->
-                <div id="claim-list" class="flex flex-col gap-3 mb-8">
-                    <!-- Injected via JS -->
-                </div>
-
-                <!-- Active Claim Details -->
+                <p class="text-slate-400 text-sm mb-6">Select a claim to apply filters.</p>
+                <div id="claim-list" class="flex flex-col gap-3 mb-8"></div>
                 <div id="active-claim-panel" class="hidden bg-slate-900 border border-slate-700 rounded-xl p-5 shadow-lg">
                     <div class="flex justify-between items-start mb-2">
                         <h3 id="active-name" class="text-lg font-bold text-white leading-tight">Claim Name</h3>
                         <span id="active-residual-badge" class="px-2 py-1 rounded text-xs font-mono font-bold bg-slate-800 border">|e| = 0</span>
                     </div>
                     <p id="active-desc" class="text-xs text-slate-400 mb-4 line-clamp-3">Description...</p>
-
                     <div class="grid grid-cols-3 gap-3 mb-6 font-mono text-sm bg-slate-950 p-3 rounded-lg border border-slate-800 text-center">
                         <div>
                             <span class="text-slate-500 block text-[10px] uppercase mb-1">Evidence(X)</span>
@@ -239,50 +190,42 @@
 
                     <div class="space-y-3">
                         <h4 class="text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">Algorithmic Filters</h4>
-                        
-                        <!-- New Ockham Filter -->
                         <button id="btn-ockham" onclick="applyBayesianOckham()" class="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition-colors group">
                             <div class="flex items-center text-sm font-semibold text-white">
                                 <i class="fa-solid fa-chart-area w-6 text-slate-400 group-hover:text-pink-400 transition-colors"></i> Bayesian Ockham Penalty
                             </div>
                             <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
                         </button>
-
                         <button id="btn-hitchens" onclick="applyHitchens()" class="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition-colors group">
                             <div class="flex items-center text-sm font-semibold text-white">
                                 <i class="fa-solid fa-gavel w-6 text-slate-400 group-hover:text-blue-400 transition-colors"></i> Hitchens's Razor
                             </div>
                             <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
                         </button>
-
                         <button id="btn-sagan" onclick="applySagan()" class="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition-colors group">
                             <div class="flex items-center text-sm font-semibold text-white">
                                 <i class="fa-solid fa-scale-balanced w-6 text-slate-400 group-hover:text-purple-400 transition-colors"></i> Sagan's Standard
                             </div>
                             <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
                         </button>
-
                         <button id="btn-landauer" onclick="applyLandauer()" class="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition-colors group">
                             <div class="flex items-center text-sm font-semibold text-white">
                                 <i class="fa-solid fa-fire w-6 text-slate-400 group-hover:text-red-400 transition-colors"></i> Landauer's Limit
                             </div>
                             <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
                         </button>
-
                         <button id="btn-newton" onclick="applyNewton()" class="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition-colors group">
                             <div class="flex items-center text-sm font-semibold text-white">
                                 <i class="fa-solid fa-meteor w-6 text-slate-400 group-hover:text-orange-500 transition-colors"></i> Alder's Razor
                             </div>
                             <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
                         </button>
-
                         <button id="btn-popper" onclick="applyPopper()" class="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition-colors group">
                             <div class="flex items-center text-sm font-semibold text-white">
                                 <i class="fa-solid fa-vial-circle-check w-6 text-slate-400 group-hover:text-emerald-400 transition-colors"></i> Popper's Falsifiability
                             </div>
                             <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
                         </button>
-                        
                         <button id="btn-solomonoff" onclick="applySolomonoff()" class="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition-colors group">
                             <div class="flex items-center text-sm font-semibold text-white">
                                 <i class="fa-solid fa-microchip w-6 text-slate-400 group-hover:text-cyan-400 transition-colors"></i> Solomonoff Prior
@@ -292,87 +235,18 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </aside>
 
     <script>
-        // Database of Claims with new parameter complexity (k) limits
         const initialClaims = [
-            {
-                id: 'g0',
-                name: 'The Intervening God (G0)',
-                description: 'A tri-omni deity that answers prayers, parts seas, and physically alters the universe. Requires a massive amount of physical computation.',
-                x: 0, y: 1, 
-                is_intervening: true,
-                parameters: 5, // Exogenous initialization, teleology, local entropic override, temporal perturbations, global invariant.
-                links: []
-            },
-            {
-                id: 'manifestation',
-                name: 'Manifestation',
-                description: 'The belief that conscious human thought directly alters physical reality and probability to attract desired outcomes without physical action.',
-                x: 0, y: 1, 
-                is_intervening: true,
-                parameters: 3, // Brainwave energy coupling, macroscopic probabilistic tuning, intent translation.
-                links: []
-            },
-            {
-                id: 'yec',
-                name: 'Young Earth (6k Yrs)',
-                description: 'The assertion that the Earth and the observable universe were created approximately 6,000 years ago.',
-                x: 0, y: 1, 
-                is_intervening: false,
-                parameters: 4, // Requires ad-hoc overrides for light speed, isotopic decay rates, geology, and cosmic expansion.
-                links: [{ target: 'g0', weight: 0.6 }] // YEC strongly props up G0
-            },
-            {
-                id: 'pythagoras',
-                name: 'Pythagorean Fava Beans',
-                description: 'The belief that hollow fava bean stems act as literal ladders for reincarnated human souls.',
-                x: -1, y: 1, 
-                is_intervening: false,
-                parameters: 1,
-                history: [{x: 0, y: 1, label: '500 BC'}],
-                links: []
-            },
-            {
-                id: 'geocentrism',
-                name: 'Ptolemaic Geocentrism',
-                description: 'The Earth is fixed at the center. Requires invisible epicycles to explain retrograde motion.',
-                x: -1, y: 1, 
-                is_intervening: false,
-                parameters: 4, // Nested epicycles
-                history: [
-                    {x: 0.5, y: 1, label: 'Ptolemy'},
-                    {x: -0.2, y: 1, label: 'Copernicus'},
-                    {x: -0.8, y: 1, label: 'Galileo'}
-                ],
-                links: [{ target: 'g0', weight: 0.3 }]
-            },
-            {
-                id: 'mwi',
-                name: 'Many-Worlds Interpretation',
-                description: 'Wave function branches into entire physical universes. Falsified by the lack of Stenger Spikes (thermodynamic heat) at bifurcations.',
-                x: -1, y: 1, 
-                is_intervening: false,
-                parameters: 1, // Extremely parsimonious mathematically, ontologically heavy
-                history: [{x: 0, y: 1, label: 'Everett (1957)'}],
-                links: []
-            },
-            {
-                id: 'relativity',
-                name: 'General Relativity',
-                description: 'Gravity is the curvature of spacetime. Verified by Eddington eclipse experiment and GPS synchronization.',
-                x: 1, y: 1, 
-                is_intervening: false,
-                parameters: 1,
-                history: [
-                    {x: 0, y: 0.5, label: 'Einstein (1915)'},
-                    {x: 0.8, y: 0.9, label: 'Eddington'}
-                ],
-                links: []
-            }
+            { id: 'g0', name: 'The Intervening God (G0)', description: 'A tri-omni deity that answers prayers, parts seas, and physically alters the universe.', x: 0, y: 1, is_intervening: true, parameters: 5, links: [] },
+            { id: 'manifestation', name: 'Manifestation', description: 'The belief that conscious human thought directly alters physical reality.', x: 0, y: 1, is_intervening: true, parameters: 3, links: [] },
+            { id: 'yec', name: 'Young Earth (6k Yrs)', description: 'The assertion that the Earth was created approximately 6,000 years ago.', x: 0, y: 1, is_intervening: false, parameters: 4, links: [{ target: 'g0', weight: 0.6 }] },
+            { id: 'pythagoras', name: 'Pythagorean Fava Beans', description: 'Hollow fava bean stems act as literal ladders for reincarnated human souls.', x: -1, y: 1, is_intervening: false, parameters: 1, links: [] },
+            { id: 'geocentrism', name: 'Ptolemaic Geocentrism', description: 'Earth is fixed at the center. Requires invisible epicycles.', x: -1, y: 1, is_intervening: false, parameters: 4, links: [{ target: 'g0', weight: 0.3 }] },
+            { id: 'mwi', name: 'Many-Worlds Interpretation', description: 'Wave function branches into entire physical universes.', x: -1, y: 1, is_intervening: false, parameters: 1, links: [] },
+            { id: 'relativity', name: 'General Relativity', description: 'Gravity is the curvature of spacetime. Verified by Eddington.', x: 1, y: 1, is_intervening: false, parameters: 1, links: [] }
         ];
 
         let claims = [];
@@ -392,7 +266,6 @@
             document.getElementById('active-claims-view').classList.add('hidden');
             document.getElementById('add-claim-view').classList.add('hidden');
             document.getElementById('ai-chat-view').classList.add('hidden');
-            
             document.getElementById('active-claims-view').classList.remove('block');
             document.getElementById('add-claim-view').classList.remove('block');
             document.getElementById('ai-chat-view').classList.remove('flex');
@@ -445,11 +318,13 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        function appendSystemMessage(text) {
+        function appendSystemMessage(text, isError = false) {
             const container = document.getElementById('ai-chat-history');
             const div = document.createElement('div');
             div.className = "text-center my-3";
-            div.innerHTML = `<span class="inline-block bg-green-900/50 border border-green-700 text-green-400 text-xs font-mono px-3 py-1 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.3)]"><i class="fa-solid fa-link mr-1"></i> ${text}</span>`;
+            const colorClass = isError ? "bg-red-900/50 border-red-700 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.3)]" : "bg-green-900/50 border-green-700 text-green-400 shadow-[0_0_10px_rgba(34,197,94,0.3)]";
+            const icon = isError ? "fa-triangle-exclamation" : "fa-link";
+            div.innerHTML = `<span class="inline-block border text-xs font-mono px-3 py-1 rounded-full ${colorClass}"><i class="fa-solid ${icon} mr-1"></i> ${text}</span>`;
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
         }
@@ -461,7 +336,7 @@
             const claim = claims.find(c => c.id === activeClaimId);
             if (claim && claim.aiHistory) {
                 claim.aiHistory.forEach(msg => {
-                    if (msg.role === 'system') appendSystemMessage(msg.text);
+                    if (msg.role === 'system') appendSystemMessage(msg.text, msg.isError);
                     else appendChatMessage(msg.role, msg.text);
                 });
             }
@@ -491,17 +366,13 @@
                     parts: [{ text: msg.text }]
                 }));
 
-            // NEW AI SYSTEM INSTRUCTION INTEGRATING THE PDF MATH
             const systemPromptText = `You are an epistemological thermodynamic engine AI. You evaluate evidence and syllogisms for the claim: "${claim.name}" (${claim.description}). Current Evidence (X) score: ${claim.x}. 
-            
 CRITICAL DIRECTIVE: You must rigorously incorporate the mathematical bounds established in the foundational document 'Exogenous Model Probability Analysis.pdf':
-1. Ad Hoc Penalties: Identify if the user's argument (or the claim itself) relies on stacking ad hoc parameters (e.g., 'meta-time', 'magic', 'unobserved dimensions') to survive empirical falsification. If so, apply the Bayesian Ockham Factor (geometric decay), which exponentially dilutes the model's marginal likelihood.
-2. Fréchet Inequalities: Recognize that the joint probability of a composite model cannot exceed its least probable constituent. 
-3. Entropic Barriers: Interventions in closed systems face a massive configurational bottleneck (loss of microstates). Penalize accordingly.
-4. Deep Well Alpha Threshold: To achieve a positive Evidence (X) score, the model must surpass an alpha of 10^-5. Models requiring massive ad hoc tuning fail this threshold completely and fall deep into the negative.
-
-Evaluate the logic, validity, and mathematical soundness. Adjust the X coordinate (-1.0 to 1.0). If an argument effectively traps a claim in an ad hoc cascade or definitional contradiction, do not hesitate to push X decisively toward -1.0. 
-Respond strictly in JSON format.`;
+1. Ad Hoc Penalties: Identify if the user's argument relies on stacking ad hoc parameters to survive falsification. Apply the Bayesian Ockham Factor.
+2. Fréchet Inequalities: The joint probability of a composite model cannot exceed its least probable constituent. 
+3. Entropic Barriers: Interventions in closed systems face a massive configurational bottleneck.
+4. Deep Well Alpha Threshold: To achieve a positive Evidence (X) score, the model must surpass an alpha of 10^-5. Models requiring massive ad hoc tuning fail this threshold completely.
+Evaluate the logic, validity, and mathematical soundness. Respond strictly in JSON format.`;
 
             const payload = {
                 contents: geminiHistory,
@@ -511,7 +382,7 @@ Respond strictly in JSON format.`;
                     responseSchema: {
                         type: "OBJECT",
                         properties: {
-                            "message": { type: "STRING", description: "Your conversational response evaluating the user's logic using the Exogenous Model Probability Analysis parameters." },
+                            "message": { type: "STRING", description: "Your conversational response evaluating the user's logic." },
                             "new_x": { type: "NUMBER", description: "The newly calculated X coordinate (-1.0 to 1.0)" }
                         },
                         required: ["message", "new_x"]
@@ -523,12 +394,22 @@ Respond strictly in JSON format.`;
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
             try {
+                if (!apiKey) {
+                    throw new Error("API Key is missing. The simulation is running in a local/preview environment without API access.");
+                }
+
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+                
                 const result = await response.json();
+                
+                // NEW: Explicitly catch API-level errors (like 400 Bad Request)
+                if (result.error) {
+                    throw new Error(result.error.message);
+                }
                 
                 if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
                     const jsonStr = result.candidates[0].content.parts[0].text;
@@ -542,17 +423,19 @@ Respond strictly in JSON format.`;
                     
                     if (prevX !== newX) {
                         setClaimCoordinates(claims.indexOf(claim), newX, newX, 'AI Evaluation');
-                        
                         const sysMsg = `HUMEAN DICTUM TRIGGERED: Evidence shifted to ${newX.toFixed(2)}. Belief (Y) force-coupled to ${newX.toFixed(2)}.`;
                         claim.aiHistory.push({ role: 'system', text: sysMsg });
                         appendSystemMessage(sysMsg);
-                        
                         renderAll();
                     }
+                } else {
+                    throw new Error("Oracle returned an unexpected response format.");
                 }
             } catch (e) {
                 console.error("AI Error:", e);
-                appendSystemMessage("Connection to Oracle failed. Check console.");
+                const errorMsg = e.message || "Connection to Oracle failed.";
+                claim.aiHistory.push({ role: 'system', text: `SYSTEM ERROR: ${errorMsg}`, isError: true });
+                appendSystemMessage(`SYSTEM ERROR: ${errorMsg}`, true);
             } finally {
                 btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
                 btn.disabled = false;
@@ -575,7 +458,8 @@ Respond strictly in JSON format.`;
                 y: isNaN(y) ? 0 : Math.max(-1, Math.min(1, y)),
                 parameters: Math.max(1, k),
                 is_intervening: isIntervening,
-                history: []
+                history: [],
+                links: [] 
             };
             
             claims.push(newClaim);
@@ -592,17 +476,12 @@ Respond strictly in JSON format.`;
         }
 
         function calculateResidual(x, y) { return Math.abs(y - x); }
-
-        function getHeatClass(residual) {
-            if (residual <= 0.2) return 'heat-0';
-            if (residual <= 1.2) return 'heat-1';
-            return 'heat-2';
-        }
+        function getHeatClass(residual) { return residual <= 0.2 ? 'heat-0' : (residual <= 1.2 ? 'heat-1' : 'heat-2'); }
 
         function setClaimCoordinates(claimIndex, newX, newY, sourceLabel, triggerShockwave = true, visited = new Set()) {
             const claim = claims[claimIndex];
             if (visited.has(claim.id)) return;
-            visited.add(claim.id); // Prevent infinite loops
+            visited.add(claim.id); 
 
             const oldX = claim.x;
             claim.x = Math.max(-1, Math.min(1, newX));
@@ -612,7 +491,6 @@ Respond strictly in JSON format.`;
             
             const deltaX = claim.x - oldX;
 
-            // Trigger Quinean Shockwave if X changed significantly
             if (triggerShockwave && Math.abs(deltaX) > 0.05 && claim.links) {
                 claim.links.forEach(link => {
                     const targetIndex = claims.findIndex(c => c.id === link.target);
@@ -620,16 +498,13 @@ Respond strictly in JSON format.`;
                         const targetClaim = claims[targetIndex];
                         const targetNewX = targetClaim.x + (deltaX * link.weight);
                         
-                        // Visual shockwave effect
                         const line = document.getElementById(`link-${claim.id}-${targetClaim.id}`);
                         if (line) {
                             line.classList.add('shockwave');
                             setTimeout(() => line.classList.remove('shockwave'), 1000);
                         }
 
-                        // Recursive propagation with delay for visual impact
                         setTimeout(() => {
-                            // Auto-Humean snap for cascading beliefs
                             setClaimCoordinates(targetIndex, targetNewX, targetNewX, `Quinean Cascade (from ${claim.name})`, true, visited);
                             renderAll();
                         }, 600);
@@ -638,9 +513,7 @@ Respond strictly in JSON format.`;
             }
         }
 
-        function mapToSVG(x, y) {
-            return { cx: x * 100, cy: -y * 100 };
-        }
+        function mapToSVG(x, y) { return { cx: x * 100, cy: -y * 100 }; }
 
         function renderAll() {
             renderQuineanWeb();
@@ -654,11 +527,9 @@ Respond strictly in JSON format.`;
         function renderQuineanWeb() {
             const container = document.getElementById('quinean-links');
             container.innerHTML = '';
-
             claims.forEach(claim => {
                 if (!claim.links) return;
                 const sourceCoords = mapToSVG(claim.x, claim.y);
-                
                 claim.links.forEach(link => {
                     const targetClaim = claims.find(c => c.id === link.target);
                     if (targetClaim) {
@@ -685,29 +556,24 @@ Respond strictly in JSON format.`;
 
             const points = [...claim.history, {x: claim.x, y: claim.y}];
             let pathD = "";
-            
             points.forEach((pt, i) => {
                 const svgCoords = mapToSVG(pt.x, pt.y);
                 if (i === 0) pathD += `M ${svgCoords.cx} ${svgCoords.cy} `;
                 else pathD += `L ${svgCoords.cx} ${svgCoords.cy} `;
-                
                 if (i < points.length - 1) {
                     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                     circle.setAttribute('cx', svgCoords.cx);
                     circle.setAttribute('cy', svgCoords.cy);
                     circle.setAttribute('class', 'trajectory-point');
-                    
                     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                     text.setAttribute('x', svgCoords.cx + 4);
                     text.setAttribute('y', svgCoords.cy - 4);
                     text.setAttribute('class', 'trajectory-label');
                     text.textContent = pt.label || `T-${points.length - i}`;
-                    
                     container.appendChild(circle);
                     container.appendChild(text);
                 }
             });
-            
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path.setAttribute('d', pathD);
             path.setAttribute('class', 'trajectory-line');
@@ -718,7 +584,6 @@ Respond strictly in JSON format.`;
         function renderSVG() {
             const container = document.getElementById('data-nodes');
             container.innerHTML = '';
-
             claims.forEach(claim => {
                 const residual = calculateResidual(claim.x, claim.y);
                 const heatClass = getHeatClass(residual);
@@ -734,7 +599,6 @@ Respond strictly in JSON format.`;
                 circle.setAttribute('cy', svgCoords.cy);
                 circle.setAttribute('r', isActive ? '6' : '4');
                 circle.setAttribute('class', `${heatClass} transition-all duration-700 ease-in-out`);
-                
                 if (isActive) {
                     circle.setAttribute('stroke', 'white');
                     circle.setAttribute('stroke-width', '2');
@@ -755,7 +619,6 @@ Respond strictly in JSON format.`;
         function renderSidebar() {
             const list = document.getElementById('claim-list');
             list.innerHTML = '';
-
             claims.forEach(claim => {
                 const residual = calculateResidual(claim.x, claim.y);
                 const dotColor = residual <= 0.2 ? 'bg-blue-500' : (residual <= 1.2 ? 'bg-yellow-500' : 'bg-red-500');
@@ -781,7 +644,6 @@ Respond strictly in JSON format.`;
             const totalE = claims.reduce((sum, claim) => sum + calculateResidual(claim.x, claim.y), 0);
             document.getElementById('global-residual').textContent = totalE.toFixed(2);
             document.getElementById('total-entities').textContent = claims.length;
-
             const globalResEl = document.getElementById('global-residual');
             if (totalE > 4) globalResEl.className = 'font-bold text-red-500';
             else if (totalE > 1) globalResEl.className = 'font-bold text-yellow-500';
@@ -798,7 +660,6 @@ Respond strictly in JSON format.`;
         function updateActivePanel() {
             const claim = claims.find(c => c.id === activeClaimId);
             if (!claim) return;
-
             document.getElementById('active-name').textContent = claim.name;
             document.getElementById('active-desc').textContent = claim.description;
             document.getElementById('active-x').textContent = claim.x.toFixed(2);
@@ -808,14 +669,8 @@ Respond strictly in JSON format.`;
             const residual = calculateResidual(claim.x, claim.y);
             const badge = document.getElementById('active-residual-badge');
             badge.textContent = `|e| = ${residual.toFixed(1)}`;
-            
-            badge.className = `px-2 py-1 rounded text-xs font-mono font-bold border ${
-                residual <= 0.2 ? 'bg-blue-900/50 border-blue-500 text-blue-400' :
-                residual <= 1.2 ? 'bg-yellow-900/50 border-yellow-500 text-yellow-400' :
-                'bg-red-900/50 border-red-500 text-red-400'
-            }`;
+            badge.className = `px-2 py-1 rounded text-xs font-mono font-bold border ${residual <= 0.2 ? 'bg-blue-900/50 border-blue-500 text-blue-400' : residual <= 1.2 ? 'bg-yellow-900/50 border-yellow-500 text-yellow-400' : 'bg-red-900/50 border-red-500 text-red-400'}`;
 
-            // Button States
             const btnOckham = document.getElementById('btn-ockham');
             const btnHitchens = document.getElementById('btn-hitchens');
             const btnSagan = document.getElementById('btn-sagan');
@@ -823,7 +678,6 @@ Respond strictly in JSON format.`;
             const btnNewton = document.getElementById('btn-newton');
             const btnPopper = document.getElementById('btn-popper');
 
-            // Ockham Penalty: Always available if k > 1 and not fully falsified
             if (claim.parameters > 1 && claim.x > -0.99) {
                 btnOckham.classList.remove('opacity-50', 'cursor-not-allowed');
                 btnOckham.onclick = applyBayesianOckham;
@@ -878,17 +732,11 @@ Respond strictly in JSON format.`;
             }
         }
 
-        // NEW FILTER: The Bayesian Ockham Penalty
         function applyBayesianOckham() {
             const claimIndex = claims.findIndex(c => c.id === activeClaimId);
             if (claimIndex > -1) {
-                const claim = claims[claimIndex];
-                const k = claim.parameters || 1;
-                
-                const penalty = Math.pow(0.05, k);
-                const newX = -1 + penalty;
-                
-                setClaimCoordinates(claimIndex, newX, null, `Ockham Penalty (k=${k})`);
+                const k = claims[claimIndex].parameters || 1;
+                setClaimCoordinates(claimIndex, -1 + Math.pow(0.05, k), null, `Ockham Penalty (k=${k})`);
                 renderAll();
             }
         }
@@ -904,8 +752,7 @@ Respond strictly in JSON format.`;
         function applySagan() {
             const claimIndex = claims.findIndex(c => c.id === activeClaimId);
             if (claimIndex > -1 && claims[claimIndex].y === 1 && claims[claimIndex].x !== 1) {
-                const newY = claims[claimIndex].x <= 0 ? claims[claimIndex].x : 0;
-                setClaimCoordinates(claimIndex, claims[claimIndex].x, newY, 'Sagan Standard');
+                setClaimCoordinates(claimIndex, claims[claimIndex].x, claims[claimIndex].x <= 0 ? claims[claimIndex].x : 0, 'Sagan Standard');
                 renderAll();
             }
         }
@@ -937,16 +784,9 @@ Respond strictly in JSON format.`;
         function applySolomonoff() {
             const claimIndex = claims.findIndex(c => c.id === activeClaimId);
             if (claimIndex > -1) {
-                const claim = claims[claimIndex];
-                const k = claim.parameters || 1;
-                
-                const priorProb = Math.pow(2, -k);
-                const newX = -1 + (priorProb * 2); 
-                
-                const humeanSnap = confirm("Solomonoff Prior applied. Trigger Humean Dictum to match Belief (Y) to new Evidence (X)?");
-                const newY = humeanSnap ? newX : null;
-                
-                setClaimCoordinates(claimIndex, newX, newY, `Solomonoff Prior (k=${k})`);
+                const k = claims[claimIndex].parameters || 1;
+                const newX = -1 + (Math.pow(2, -k) * 2);
+                setClaimCoordinates(claimIndex, newX, confirm("Trigger Humean Dictum?") ? newX : null, `Solomonoff Prior`);
                 renderAll();
             }
         }
