@@ -41,6 +41,12 @@
         .trajectory-label { font-family: 'JetBrains Mono', monospace; font-size: 4px; fill: #64748b; }
         .quinean-link { stroke: #a855f7; stroke-width: 1; stroke-dasharray: 2; opacity: 0.3; transition: all 0.5s ease; }
         .shockwave { stroke: #fbbf24; stroke-width: 2.5; stroke-dasharray: 0; opacity: 0.9; filter: drop-shadow(0 0 6px #fbbf24); transition: all 0.3s ease; }
+        @keyframes pulse-tension {
+            0% { stroke-width: 1; opacity: 0.4; filter: drop-shadow(0 0 2px #ec4899); }
+            50% { stroke-width: 2.5; opacity: 1; filter: drop-shadow(0 0 8px #ec4899); }
+            100% { stroke-width: 1; opacity: 0.4; filter: drop-shadow(0 0 2px #ec4899); }
+        }
+        .tension-line { stroke: #ec4899; stroke-dasharray: 4; animation: pulse-tension 1.5s infinite; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
@@ -53,7 +59,7 @@
     <main class="w-full md:w-2/3 h-1/2 md:h-full relative flex items-center justify-center border-r border-slate-800 p-4 md:p-8">
         <div class="absolute top-6 left-6 z-10">
             <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white mb-1">
-                EB Engine <span class="text-blue-500">v1.1</span>
+                EB Engine <span class="text-blue-500">v1.2</span>
             </h1>
             <p class="text-slate-400 font-mono text-sm">Thermodynamic & Bayesian Epistemology Simulator</p>
         </div>
@@ -92,6 +98,7 @@
                     </marker>
                 </defs>
                 <g id="quinean-links"></g>
+                <g id="comparison-links"></g>
                 <g id="trajectory-lines"></g>
                 <g id="data-nodes"></g>
             </svg>
@@ -190,6 +197,12 @@
 
                     <div class="space-y-3">
                         <h4 class="text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">Algorithmic Filters</h4>
+                        
+                        <!-- Focus Mode Toggle -->
+                        <button id="btn-focus" onclick="toggleFocusMode()" class="w-full flex items-center justify-center gap-2 p-2 mb-2 rounded-lg bg-indigo-900/50 hover:bg-indigo-800 border border-indigo-500/50 text-indigo-300 transition-colors text-sm font-bold">
+                            <i class="fa-solid fa-eye w-5"></i> <span id="focus-btn-text">Enter Focus Mode</span>
+                        </button>
+
                         <button id="btn-solomonoff" onclick="applySolomonoff()" class="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition-colors group">
                             <div class="flex items-center text-sm font-semibold text-white">
                                 <i class="fa-solid fa-microchip w-6 text-slate-400 group-hover:text-cyan-400 transition-colors"></i> Solomonoff Prior
@@ -233,6 +246,32 @@
                             <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
                         </button>
                     </div>
+
+                    <!-- Comparison Block -->
+                    <div class="mt-4 pt-4 border-t border-slate-800">
+                        <h4 class="text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">Model Comparison</h4>
+                        <div id="comparison-controls" class="space-y-2">
+                            <button id="btn-select-counter" onclick="toggleCounterSelection()" class="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-pink-900/40 hover:bg-pink-800 border border-pink-500/50 text-pink-300 transition-colors text-sm font-bold">
+                                <i class="fa-solid fa-code-compare w-5"></i> <span id="counter-btn-text">Select Counter-Claim</span>
+                            </button>
+                            <button id="btn-auto-generate" onclick="autoGenerateCounterClaim()" class="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-emerald-900/40 hover:bg-emerald-800 border border-emerald-500/50 text-emerald-300 transition-colors text-sm font-bold">
+                                <i class="fa-solid fa-wand-magic-sparkles w-5"></i> <span id="auto-gen-btn-text">Auto-Generate M0 (AI)</span>
+                            </button>
+                        </div>
+                        <div id="comparison-active" class="hidden mt-3 p-4 bg-slate-950 rounded-lg border border-pink-500/50 relative overflow-hidden shadow-lg">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-pink-500"></div>
+                            <span class="text-[10px] text-pink-400 uppercase font-bold block mb-1">Vs. Counter-Claim (M0)</span>
+                            <div class="text-sm font-bold text-white mb-3 leading-tight" id="counter-claim-name">Name</div>
+                            <div class="flex gap-2">
+                                <button onclick="runBayesFactor()" class="flex-1 bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold py-2 rounded transition-colors shadow-[0_0_10px_rgba(236,72,153,0.3)]">
+                                    <i class="fa-solid fa-bolt mr-1"></i> Bayes Factor
+                                </button>
+                                <button onclick="clearComparison()" class="px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded transition-colors border border-slate-600">
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -252,12 +291,23 @@
 
         let claims = [];
         let activeClaimId = null;
+        let isFocusMode = false;
+        let counterClaimId = null;
+        let isSelectingCounter = false;
 
         function init() { resetSystem(); }
 
         function resetSystem() {
             claims = JSON.parse(JSON.stringify(initialClaims));
             activeClaimId = null;
+            
+            // Reset focus mode UI on hard reset
+            isFocusMode = false;
+            counterClaimId = null;
+            isSelectingCounter = false;
+            updateFocusButtonUI();
+            clearComparisonUI();
+
             document.getElementById('active-claim-panel').classList.add('hidden');
             switchTab('active');
             renderAll();
@@ -289,6 +339,31 @@
                 document.getElementById('ai-chat-view').classList.add('flex');
                 document.getElementById('tab-btn-ai').className = "flex-1 py-4 text-sm font-semibold text-white border-b-2 border-purple-500 bg-slate-800/50 transition-colors";
                 updateAIPanel();
+            }
+        }
+
+        function toggleFocusMode() {
+            if (!activeClaimId) return;
+            isFocusMode = !isFocusMode;
+            updateFocusButtonUI();
+            renderAll();
+        }
+
+        function updateFocusButtonUI() {
+            const btn = document.getElementById('btn-focus');
+            const icon = btn.querySelector('i');
+            const text = document.getElementById('focus-btn-text');
+            
+            if (isFocusMode) {
+                btn.classList.replace('bg-indigo-900/50', 'bg-indigo-600');
+                btn.classList.replace('text-indigo-300', 'text-white');
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+                text.textContent = 'Exit Focus Mode';
+            } else {
+                btn.classList.replace('bg-indigo-600', 'bg-indigo-900/50');
+                btn.classList.replace('text-white', 'text-indigo-300');
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+                text.textContent = 'Enter Focus Mode';
             }
         }
 
@@ -343,6 +418,97 @@
             }
         }
 
+        async function runBayesFactor() {
+            if (!activeClaimId || !counterClaimId) return;
+            
+            const claim1 = claims.find(c => c.id === activeClaimId); // Exogenous (M1)
+            const claim2 = claims.find(c => c.id === counterClaimId); // Baseline (M0)
+            
+            // Switch to AI tab to show progress
+            switchTab('ai');
+            
+            if (!claim1.aiHistory) claim1.aiHistory = [];
+            
+            const sysPrompt = `INITIATING BAYES FACTOR COMPARISON (B10)
+Model 1 (M1): "${claim1.name}" (${claim1.description}) | Ad Hoc Params (k): ${claim1.parameters}
+Model 0 (M0): "${claim2.name}" (${claim2.description}) | Ad Hoc Params (k): ${claim2.parameters}
+
+Please evaluate the Marginal Likelihood ratio of M1 / M0.
+1. Use the googleSearch tool to cross-reference M0's mechanistic validity (e.g., CCTV, laws of physics, historical facts).
+2. Apply the Bayesian Ockham Factor penalty to M1 based on its parameter count (k=${claim1.parameters}) vs M0 (k=${claim2.parameters}).
+3. Return the exact Bayes Factor ratio evaluation and the new Evidence (X) score specifically for M1, flatlining it to negative evidence if it suffers a massive Ockham penalty compared to M0's mechanistic explanation.`;
+
+            claim1.aiHistory.push({ role: 'user', text: `Execute Bayes Factor evaluation against Model 0: ${claim2.name}` });
+            appendChatMessage('user', `Execute Bayes Factor evaluation against Model 0: ${claim2.name}`);
+            
+            const btn = document.getElementById('ai-submit-btn');
+            const originalBtnHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+            btn.disabled = true;
+
+            const systemInstructionText = `You are an epistemological thermodynamic engine AI. 
+CRITICAL DIRECTIVE: You are executing a Bayes Factor comparison. 
+Evaluate Model 1 (the active claim) against Model 0 (the counter-claim). 
+Apply the Ockham Factor explicitly. If M1 relies on massive ad hoc tuning (k>1) to explain what M0 explains mechanistically (k=1), M1's marginal likelihood collapses geometrically.
+Provide a scathing mathematical breakdown of the posterior probabilities.
+Respond strictly in JSON format.`;
+
+            const payload = {
+                contents: [{ role: 'user', parts: [{ text: sysPrompt }] }],
+                systemInstruction: { parts: [{ text: systemInstructionText }] },
+                tools: [{ googleSearch: {} }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            "message": { type: "STRING", description: "The analytical breakdown of the Bayes Factor comparison and Ockham penalties." },
+                            "new_x": { type: "NUMBER", description: "The newly calculated X coordinate for Model 1 (-1.0 to 1.0) after the Bayes Factor penalty." }
+                        },
+                        required: ["message", "new_x"]
+                    }
+                }
+            };
+
+            const keyPart1 = "AQ.Ab8RN6IeJSdeVH";
+            const keyPart2 = "RdpbyNqomF6ksNd2l";
+            const keyPart3 = "mi76c8NRoaw7Uog6Ygg";
+            const apiKey = keyPart1 + keyPart2 + keyPart3; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (result.error) throw new Error(result.error.message);
+                
+                if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    const parsed = JSON.parse(result.candidates[0].content.parts[0].text);
+                    claim1.aiHistory.push({ role: 'model', text: parsed.message });
+                    appendChatMessage('model', parsed.message);
+                    
+                    const newX = Math.max(-1, Math.min(1, parsed.new_x));
+                    if (claim1.x !== newX) {
+                        setClaimCoordinates(claims.indexOf(claim1), newX, newX, `Bayes Factor vs ${claim2.name}`);
+                        const sysMsg = `BAYES FACTOR RESOLVED: Evidence for ${claim1.name} shifted to ${newX.toFixed(2)} due to Ockham penalty scaling. Belief forcefully coupled.`;
+                        claim1.aiHistory.push({ role: 'system', text: sysMsg });
+                        appendSystemMessage(sysMsg);
+                        renderAll();
+                    }
+                }
+            } catch (e) {
+                console.error("AI Error:", e);
+                claim1.aiHistory.push({ role: 'system', text: `SYSTEM ERROR: ${e.message}`, isError: true });
+                appendSystemMessage(`SYSTEM ERROR: ${e.message}`, true);
+            } finally {
+                btn.innerHTML = originalBtnHtml;
+                btn.disabled = false;
+            }
+        }
+
         async function submitToAI() {
             const inputEl = document.getElementById('ai-user-input');
             const text = inputEl.value.trim();
@@ -374,6 +540,7 @@ CRITICAL DIRECTIVE: You must rigorously incorporate the mathematical bounds esta
 3. Entropic Barriers: Interventions in closed systems face a massive configurational bottleneck.
 4. Deep Well Alpha Threshold: To achieve a positive Evidence (X) score, the model must surpass an alpha of 10^-5. Models requiring massive ad hoc tuning fail this threshold completely.
 5. Forensic Fact-Checking: You have access to the googleSearch tool. You MUST cross-reference historical, criminal, or physical claims with real-world data. If the user omits mechanistic variables (e.g., CCTV, physical evidence, dogs) to artificially inflate a supernatural/ad-hoc premise, expose the missing variables and flatline the claim to -1.0.
+6. Logical Fallacies & Custom Heuristics: Identify formal/informal fallacies. Specifically invoke "The Dungpile Fallacy" if the user attempts to stack multiple failed/improbable arguments in an OR-gate to simulate a successful cumulative case (an OR-gate of zeros is zero). Invoke "The Missing Ingredient Fallacy" if the argument ignores a required catalyst or physical variable for success. Use these fallacies to dismantle the syllogism, but rely on your empirical search and Bayesian bounds to justify the final Evidence (X) score.
 Evaluate the logic, validity, and mathematical soundness. Respond strictly in JSON format.`;
 
             const payload = {
@@ -523,6 +690,7 @@ Evaluate the logic, validity, and mathematical soundness. Respond strictly in JS
         function mapToSVG(x, y) { return { cx: x * 100, cy: -y * 100 }; }
 
         function renderAll() {
+            renderComparisonLine();
             renderQuineanWeb();
             renderTrajectories();
             renderSVG();
@@ -531,10 +699,36 @@ Evaluate the logic, validity, and mathematical soundness. Respond strictly in JS
             if (activeClaimId) updateActivePanel();
         }
 
+        function renderComparisonLine() {
+            const container = document.getElementById('comparison-links');
+            if(!container) return;
+            container.innerHTML = '';
+            
+            if (!activeClaimId || !counterClaimId) return;
+            
+            const claim1 = claims.find(c => c.id === activeClaimId);
+            const claim2 = claims.find(c => c.id === counterClaimId);
+            
+            if (claim1 && claim2) {
+                const c1 = mapToSVG(claim1.x, claim1.y);
+                const c2 = mapToSVG(claim2.x, claim2.y);
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', c1.cx);
+                line.setAttribute('y1', c1.cy);
+                line.setAttribute('x2', c2.cx);
+                line.setAttribute('y2', c2.cy);
+                line.setAttribute('class', 'tension-line');
+                
+                container.appendChild(line);
+            }
+        }
+
         function renderQuineanWeb() {
             const container = document.getElementById('quinean-links');
-            if(!container) return; // safety check
+            if(!container) return; 
             container.innerHTML = '';
+            
             claims.forEach(claim => {
                 if (!claim.links) return;
                 const sourceCoords = mapToSVG(claim.x, claim.y);
@@ -543,12 +737,23 @@ Evaluate the logic, validity, and mathematical soundness. Respond strictly in JS
                     if (targetClaim) {
                         const targetCoords = mapToSVG(targetClaim.x, targetClaim.y);
                         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        
                         line.setAttribute('x1', sourceCoords.cx);
                         line.setAttribute('y1', sourceCoords.cy);
                         line.setAttribute('x2', targetCoords.cx);
                         line.setAttribute('y2', targetCoords.cy);
                         line.setAttribute('id', `link-${claim.id}-${targetClaim.id}`);
+                        
+                        // Handle Focus Mode opacity (support dual focus for comparison)
+                        const isSourceActive = claim.id === activeClaimId || claim.id === counterClaimId;
+                        const isTargetActive = targetClaim.id === activeClaimId || targetClaim.id === counterClaimId;
+                        const isFaded = isFocusMode && !isSourceActive && !isTargetActive;
+                        
                         line.setAttribute('class', 'quinean-link');
+                        if (isFaded) {
+                            line.style.opacity = '0.02';
+                        }
+                        
                         container.appendChild(line);
                     }
                 });
@@ -599,25 +804,36 @@ Evaluate the logic, validity, and mathematical soundness. Respond strictly in JS
                 const heatClass = getHeatClass(residual);
                 const svgCoords = mapToSVG(claim.x, claim.y);
                 const isActive = claim.id === activeClaimId;
+                const isCounter = claim.id === counterClaimId;
+                const isFaded = isFocusMode && !isActive && !isCounter;
 
                 const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                 g.setAttribute('class', 'node');
                 g.onclick = () => selectClaim(claim.id);
+                
+                // Apply Focus Mode styling
+                if (isFaded) {
+                    g.style.opacity = '0.05';
+                    g.style.pointerEvents = 'none';
+                }
 
                 const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                 circle.setAttribute('cx', svgCoords.cx);
                 circle.setAttribute('cy', svgCoords.cy);
-                circle.setAttribute('r', isActive ? '6' : '4');
+                circle.setAttribute('r', (isActive || isCounter) ? '6' : '4');
                 circle.setAttribute('class', `${heatClass} transition-all duration-700 ease-in-out`);
                 if (isActive) {
                     circle.setAttribute('stroke', 'white');
+                    circle.setAttribute('stroke-width', '2');
+                } else if (isCounter) {
+                    circle.setAttribute('stroke', '#ec4899'); // Pink stroke for counter
                     circle.setAttribute('stroke-width', '2');
                 }
 
                 const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                 text.setAttribute('x', svgCoords.cx + 8);
                 text.setAttribute('y', svgCoords.cy + 3);
-                text.setAttribute('class', `font-mono text-[5px] transition-all duration-700 ease-in-out ${isActive ? 'fill-white font-bold' : 'fill-slate-400'}`);
+                text.setAttribute('class', `font-mono text-[5px] transition-all duration-700 ease-in-out ${(isActive || isCounter) ? 'fill-white font-bold' : 'fill-slate-400'}`);
                 text.textContent = claim.name.substring(0, 15) + (claim.name.length > 15 ? '...' : '');
 
                 g.appendChild(circle);
@@ -633,16 +849,23 @@ Evaluate the logic, validity, and mathematical soundness. Respond strictly in JS
                 const residual = calculateResidual(claim.x, claim.y);
                 const dotColor = residual <= 0.2 ? 'bg-blue-500' : (residual <= 1.2 ? 'bg-yellow-500' : 'bg-red-500');
                 const isActive = claim.id === activeClaimId;
-                const borderClass = isActive ? 'border-blue-500 bg-slate-800' : 'border-slate-700 bg-slate-900 hover:border-slate-500';
+                const isCounter = claim.id === counterClaimId;
+                
+                let borderClass = 'border-slate-700 bg-slate-900 hover:border-slate-500';
+                if (isActive) borderClass = 'border-blue-500 bg-slate-800';
+                if (isCounter) borderClass = 'border-pink-500 bg-slate-800';
 
                 const div = document.createElement('div');
                 div.className = `p-3 rounded-lg border cursor-pointer transition-colors flex items-center justify-between ${borderClass}`;
+                if (isSelectingCounter && !isActive) {
+                    div.classList.add('animate-pulse', 'hover:border-pink-400');
+                }
                 div.onclick = () => selectClaim(claim.id);
 
                 div.innerHTML = `
                     <div class="flex items-center gap-3 truncate">
                         <div class="w-2 h-2 rounded-full ${dotColor}"></div>
-                        <span class="text-sm font-semibold text-white truncate">${claim.name}</span>
+                        <span class="text-sm font-semibold text-white truncate">${claim.name} ${isCounter ? '<span class="text-pink-400 text-[10px] uppercase ml-1 font-bold">vs (M0)</span>' : ''}</span>
                     </div>
                     <span class="text-xs font-mono text-slate-400 shrink-0">|e| = ${residual.toFixed(1)}</span>
                 `;
@@ -661,10 +884,163 @@ Evaluate the logic, validity, and mathematical soundness. Respond strictly in JS
         }
 
         function selectClaim(id) {
+            if (isSelectingCounter) {
+                if (id === activeClaimId) {
+                    alert("Cannot compare a claim to itself.");
+                    return;
+                }
+                counterClaimId = id;
+                isSelectingCounter = false;
+                
+                // Force focus mode on when comparing
+                isFocusMode = true; 
+                updateFocusButtonUI();
+                
+                updateComparisonUI();
+                renderAll();
+                return;
+            }
+
             activeClaimId = id;
             document.getElementById('active-claim-panel').classList.remove('hidden');
+            
+            // If we switch primary claims, drop the counter claim
+            if (counterClaimId) clearComparison();
+            
             renderAll();
             updateAIPanel(); 
+        }
+
+        function toggleCounterSelection() {
+            isSelectingCounter = !isSelectingCounter;
+            const btnText = document.getElementById('counter-btn-text');
+            const btn = document.getElementById('btn-select-counter');
+            
+            if (isSelectingCounter) {
+                btnText.textContent = "Select from Sidebar...";
+                btn.classList.add('animate-pulse');
+            } else {
+                btnText.textContent = "Select Counter-Claim";
+                btn.classList.remove('animate-pulse');
+            }
+            renderSidebar(); // Triggers the pulse effect on list items
+        }
+
+        async function autoGenerateCounterClaim() {
+            if (!activeClaimId) return;
+            const activeClaim = claims.find(c => c.id === activeClaimId);
+            
+            const btn = document.getElementById('btn-auto-generate');
+            const btnText = document.getElementById('auto-gen-btn-text');
+            const icon = btn.querySelector('i');
+            
+            btn.classList.add('animate-pulse');
+            btn.disabled = true;
+            icon.className = "fa-solid fa-circle-notch fa-spin w-5";
+            btnText.textContent = "Consulting Oracle...";
+
+            const sysPrompt = `The user has submitted an exogenous/highly-parameterized claim (Model 1):
+Name: "${activeClaim.name}"
+Description: "${activeClaim.description}"
+
+Use googleSearch to determine the standard, parsimonious, mechanistic explanation (Model 0) for this phenomenon in the real world (e.g., standard forensic science, physics, psychology, cognitive bias). 
+Create a counter-claim for this mechanistic baseline. Keep parameters (k) to 1. Set the Evidence (X) score high (e.g., 0.8 to 1.0) if it is well-supported by real-world physics/science.`;
+
+            const payload = {
+                contents: [{ role: 'user', parts: [{ text: sysPrompt }] }],
+                systemInstruction: { parts: [{ text: "You are an epistemological AI. Formulate rigorous, mechanistic baseline models (M0) to counter exogenous claims. Respond strictly in JSON format." }] },
+                tools: [{ googleSearch: {} }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            "name": { type: "STRING", description: "Name of the mechanistic counter-claim." },
+                            "description": { type: "STRING", description: "Brief explanation of the mechanistic causes." },
+                            "x": { type: "NUMBER", description: "Evidence coordinate (-1.0 to 1.0)." }
+                        },
+                        required: ["name", "description", "x"]
+                    }
+                }
+            };
+
+            const keyPart1 = "AQ.Ab8RN6IeJSdeVH";
+            const keyPart2 = "RdpbyNqomF6ksNd2l";
+            const keyPart3 = "mi76c8NRoaw7Uog6Ygg";
+            const apiKey = keyPart1 + keyPart2 + keyPart3; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (result.error) throw new Error(result.error.message);
+                
+                if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    const parsed = JSON.parse(result.candidates[0].content.parts[0].text);
+                    
+                    const newId = 'm0-' + Date.now();
+                    claims.push({
+                        id: newId,
+                        name: parsed.name,
+                        description: parsed.description,
+                        x: Math.max(-1, Math.min(1, parsed.x)),
+                        y: 1, // Default belief to 1
+                        is_intervening: false,
+                        parameters: 1, // Mechanistic baseline is always parsimonious (k=1)
+                        links: [],
+                        history: []
+                    });
+                    
+                    counterClaimId = newId;
+                    isSelectingCounter = false;
+                    isFocusMode = true; 
+                    
+                    updateFocusButtonUI();
+                    updateComparisonUI();
+                    renderAll();
+                }
+            } catch (e) {
+                console.error("AI Generation Error:", e);
+                alert("Failed to generate baseline model: " + e.message);
+            } finally {
+                btn.classList.remove('animate-pulse');
+                btn.disabled = false;
+                icon.className = "fa-solid fa-wand-magic-sparkles w-5";
+                btnText.textContent = "Auto-Generate M0 (AI)";
+            }
+        }
+
+        function updateComparisonUI() {
+            document.getElementById('comparison-controls').classList.add('hidden');
+            document.getElementById('comparison-active').classList.remove('hidden');
+            
+            const counterClaim = claims.find(c => c.id === counterClaimId);
+            if (counterClaim) {
+                document.getElementById('counter-claim-name').textContent = counterClaim.name;
+            }
+        }
+
+        function clearComparison() {
+            counterClaimId = null;
+            isSelectingCounter = false;
+            clearComparisonUI();
+            renderAll();
+        }
+
+        function clearComparisonUI() {
+            document.getElementById('comparison-controls').classList.remove('hidden');
+            document.getElementById('comparison-active').classList.add('hidden');
+            
+            const btnText = document.getElementById('counter-btn-text');
+            const btn = document.getElementById('btn-select-counter');
+            if (btnText && btn) {
+                btnText.textContent = "Select Counter-Claim";
+                btn.classList.remove('animate-pulse');
+            }
         }
 
         function updateActivePanel() {
